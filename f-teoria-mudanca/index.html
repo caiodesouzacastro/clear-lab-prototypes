@@ -1,598 +1,205 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>F · Construtor de teoria de mudança — CLEAR Lab Prototypes</title>
-<meta name="description" content="Wizard que constrói a teoria de mudança de uma política e sugere desenho avaliativo. Mockup CLEAR Lab.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/clear.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Teoria de Mudança — CLEAR Lab (piloto)</title>
+<meta name="description" content="Estrutura a cadeia causal de um programa e sugere desenho avaliativo. Piloto interno CLEAR Lab." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-.tdm-shell { max-width: 1200px; margin: 0 auto; padding: 40px 48px 24px; }
-@media (max-width: 768px) { .tdm-shell { padding: 32px 24px 16px; } }
-
-/* Progress bar das etapas */
-.steps-bar {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 6px;
-  margin-bottom: 36px;
-}
-.step-pill {
-  padding: 12px 8px 10px;
-  border-top: 3px solid var(--border);
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--clear-gray);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1.3;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  background: transparent;
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
-  text-align: left;
-  font-family: inherit;
-}
-.step-pill:hover { color: var(--clear-blue); }
-.step-pill.done { border-top-color: var(--clear-green); color: var(--clear-green); }
-.step-pill.active { border-top-color: var(--clear-salmon); color: var(--clear-salmon); font-weight: 600; }
-.step-pill .num { display: block; font-family: var(--mono); font-size: 11px; margin-bottom: 4px; font-weight: 600; }
-.step-pill .lbl { font-size: 12px; font-family: var(--sans); text-transform: none; letter-spacing: 0; line-height: 1.3; }
-@media (max-width: 900px) { .steps-bar { grid-template-columns: repeat(4, 1fr); gap: 4px; } .step-pill .lbl { font-size: 11px; } }
-@media (max-width: 500px) { .steps-bar { grid-template-columns: repeat(2, 1fr); } }
-
-/* Step content */
-.step-content {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 40px;
-}
-@media (max-width: 1024px) { .step-content { grid-template-columns: 1fr; gap: 28px; } }
-
-.step-main h2 {
-  font-family: var(--serif);
-  font-size: 28px;
-  color: var(--clear-blue);
-  font-weight: 500;
-  margin-bottom: 8px;
-  letter-spacing: -0.015em;
-  line-height: 1.15;
-}
-.step-main h2 em { color: var(--clear-salmon); font-style: italic; }
-.step-main .step-q {
-  font-size: 16px;
-  color: var(--ink);
-  margin-bottom: 24px;
-  line-height: 1.55;
-}
-
-.step-input {
-  width: 100%;
-  font-family: inherit;
-  font-size: 15px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--ink);
-  border-radius: 4px;
-  line-height: 1.6;
-  min-height: 110px;
-  resize: vertical;
-  transition: border-color 0.18s ease;
-}
-.step-input:focus { outline: none; border-color: var(--clear-light-blue); }
-
-.step-suggestions { margin-top: 14px; }
-.step-suggestions h5 { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--clear-gray); font-weight: 500; margin-bottom: 8px; }
-.suggest-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.suggest-chip {
-  font-family: inherit;
-  font-size: 12.5px;
-  padding: 6px 11px;
-  background: var(--clear-light-blue-bg);
-  border: 1px solid transparent;
-  color: var(--clear-light-blue);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.suggest-chip:hover { background: var(--clear-light-blue); color: var(--paper); }
-
-/* Coluna lateral — guia metodológico */
-.guide {
-  background: var(--card-bg);
-  border-left: 3px solid var(--clear-light-blue);
-  padding: 22px 24px;
-  font-size: 13.5px;
-  line-height: 1.65;
-  color: var(--ink);
-}
-.guide-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--clear-light-blue); font-weight: 500; margin-bottom: 12px; }
-.guide h4 { font-family: var(--serif); font-size: 17px; color: var(--clear-blue); font-weight: 500; margin-bottom: 8px; letter-spacing: -0.01em; }
-.guide p { margin-bottom: 10px; }
-.guide p:last-child { margin-bottom: 0; }
-.guide em { font-style: italic; color: var(--clear-light-blue); }
-.guide ul { margin: 8px 0 8px 22px; }
-.guide li { margin-bottom: 4px; }
-
-/* Navigation */
-.step-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-}
-.step-nav-info { font-family: var(--mono); font-size: 11px; color: var(--clear-gray); letter-spacing: 0.04em; }
-
-/* Diagrama final */
-.diagrama-section { display: none; }
-.diagrama-section.show { display: block; }
-
-.diagrama {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  padding: 36px;
-  margin: 24px 0;
-  overflow-x: auto;
-}
-.diagrama-title {
-  font-family: var(--serif);
-  font-size: 22px;
-  color: var(--clear-blue);
-  font-weight: 500;
-  margin-bottom: 6px;
-  letter-spacing: -0.01em;
-}
-.diagrama-sub {
-  font-size: 13px;
-  color: var(--clear-gray);
-  margin-bottom: 24px;
-}
-.cadeia {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  min-width: 880px;
-}
-@media (max-width: 768px) { .cadeia { grid-template-columns: 1fr; gap: 14px; min-width: 0; } }
-
-.elo {
-  background: var(--paper);
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--clear-light-blue);
-  padding: 16px 16px 18px;
-  position: relative;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-}
-.elo:nth-child(1) { border-top-color: var(--clear-gray); }
-.elo:nth-child(2) { border-top-color: var(--clear-light-blue); }
-.elo:nth-child(3) { border-top-color: var(--clear-purple); }
-.elo:nth-child(4) { border-top-color: var(--clear-amber); }
-.elo:nth-child(5) { border-top-color: var(--clear-green); }
-
-.elo-rotulo { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--clear-gray); font-weight: 500; margin-bottom: 10px; }
-.elo-titulo { font-family: var(--serif); font-size: 15px; color: var(--clear-blue); font-weight: 500; margin-bottom: 10px; line-height: 1.3; }
-.elo-bullets { font-size: 12.5px; line-height: 1.5; color: var(--ink); list-style: none; }
-.elo-bullets li { padding: 3px 0; padding-left: 12px; position: relative; }
-.elo-bullets li::before { content: "→"; position: absolute; left: 0; color: var(--clear-salmon); font-weight: 600; }
-@media (min-width: 769px) {
-  .elo::after {
-    content: "→";
-    position: absolute;
-    right: -16px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 22px;
-    color: var(--clear-salmon);
-    font-weight: 600;
-    z-index: 1;
+  :root{ color-scheme: light; }
+  html,body{ margin:0; padding:0; background:#F7F5EF; }
+  *{ box-sizing:border-box; }
+  .ebr-mono{font-family:'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+  .ebr-serif{font-family:'Fraunces',serif;}
+  .ebr-btn{transition:transform .15s ease,opacity .15s ease;cursor:pointer;}
+  .ebr-btn:hover{opacity:.92;transform:translateY(-1px);}
+  .ebr-chip{transition:border-color .15s ease,color .15s ease;cursor:pointer;}
+  .ebr-chip:hover{border-color:#08B0EE;color:#01354A;}
+  @keyframes ebrpulse{0%,100%{opacity:.35}50%{opacity:1}}
+  .ebr-dot{animation:ebrpulse 1.2s ease-in-out infinite;}
+  @keyframes ebrup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .ebr-rise{animation:ebrup .5s ease both;}
+  a{ color:#01354A; }
+  textarea{ font-family:'DM Sans',sans-serif; }
+  .ebr-fontes a:hover{ color:#01354A; text-decoration:underline; }
+  @media print {
+    .no-print{ display:none !important; }
+    html,body{ background:#fff !important; }
+    header{ padding:16px 0 !important; }
+    main{ padding:12px 0 0 !important; }
   }
-  .elo:last-child::after { display: none; }
-}
-
-/* Premissas e riscos abaixo */
-.flank {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-top: 24px;
-}
-@media (max-width: 768px) { .flank { grid-template-columns: 1fr; } }
-.flank-box {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  padding: 18px 22px;
-}
-.flank-box-premissa { border-left: 3px solid var(--clear-green); }
-.flank-box-risco { border-left: 3px solid var(--clear-salmon); }
-.flank-box h5 { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--clear-gray); font-weight: 500; margin-bottom: 10px; }
-.flank-box-premissa h5 strong { color: var(--clear-green); }
-.flank-box-risco h5 strong { color: var(--clear-salmon); }
-.flank-box ul { list-style: none; font-size: 13.5px; line-height: 1.6; }
-.flank-box li { padding: 4px 0 4px 14px; position: relative; }
-.flank-box-premissa li::before { content: "●"; position: absolute; left: 0; color: var(--clear-green); font-size: 8px; top: 8px; }
-.flank-box-risco li::before { content: "▲"; position: absolute; left: 0; color: var(--clear-salmon); font-size: 10px; top: 6px; }
-
-/* Sugestão de desenho avaliativo */
-.desenho-card {
-  background: var(--clear-light-purple);
-  border-left: 3px solid var(--clear-purple);
-  padding: 24px 28px;
-  margin-top: 28px;
-}
-.desenho-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--clear-purple); font-weight: 500; margin-bottom: 8px; }
-.desenho-tit { font-family: var(--serif); font-size: 20px; color: var(--clear-blue); font-weight: 500; margin-bottom: 10px; letter-spacing: -0.01em; }
-.desenho-card p { font-size: 14px; line-height: 1.6; color: var(--ink); margin-bottom: 10px; }
-.desenho-detail { font-family: var(--mono); font-size: 12px; color: var(--clear-gray); padding-top: 12px; margin-top: 8px; border-top: 1px solid rgba(95,65,130,0.2); }
-.desenho-detail strong { color: var(--ink); }
-
-.diag-actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
-
-/* Cenário hint */
-.scenario-hint {
-  margin-bottom: 28px;
-  padding: 16px 20px;
-  background: var(--clear-light-amber);
-  border-left: 3px solid var(--clear-amber);
-  font-size: 13.5px;
-  line-height: 1.6;
-}
-.scenario-hint strong { color: var(--clear-amber); }
 </style>
 </head>
 <body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const WORKER_URL = "https://evidencia-br.caiodesouzacastro28.workers.dev";
+const PRODUTO = "teoria";
 
-<div data-proto-header
-     data-letter="F"
-     data-titulo="Construtor de teoria de mudança"
-     data-tag="Camada 3 · Propor"
-     data-subtitle="Wizard em 8 etapas que materializa o curso de avaliação ex-ante do CLEAR. Você descreve o problema; a ferramenta constrói o diagrama da teoria de mudança e sugere o desenho avaliativo apropriado.">
-</div>
-
-<div class="tdm-shell">
-
-  <div class="scenario-hint">
-    <strong>Cenário ilustrativo do mockup:</strong> programa municipal de busca ativa escolar com agente intersetorial e sistema de alerta precoce, em município médio do Nordeste com abandono concentrado no 7º-9º ano. Os campos vêm pré-preenchidos. Você pode editá-los ou avançar diretamente para o diagrama.
-  </div>
-
-  <!-- Progress -->
-  <nav class="steps-bar" id="steps-bar"></nav>
-
-  <!-- Etapa atual / Diagrama final -->
-  <div id="wizard-area"></div>
-  <div class="diagrama-section" id="diagrama-area"></div>
-
-  <!-- Navegação -->
-  <div class="step-nav" id="step-nav"></div>
-
-</div>
-
-<div data-proto-footer></div>
-
-<script src="../assets/clear.js"></script>
-<script src="../assets/proto-chrome.js"></script>
-<script>
-const STEPS = [
-  {
-    n: "01",
-    lbl: "Problema",
-    titulo: "Qual é o <em>problema</em> de política pública?",
-    pergunta: "Descreva o problema em uma frase. Quem é afetado, em que dimensão, em que magnitude. Evite descrever a solução nesta etapa.",
-    placeholder: "Ex.: Abandono escolar de 14% entre 7º e 9º ano, concentrado em meninos negros de territórios periurbanos com baixa cobertura de equipamentos sociais.",
-    sugest: ["Adicionar magnitude do problema", "Especificar grupo afetado", "Comparar com pares"],
-    pre: "No nosso município, o abandono escolar cumulativo entre o 7º e o 9º ano é de 14%, concentrado em meninos negros de 4 territórios periurbanos. A cobertura ESF nesses territórios é 62% e o CRAS local não tem volante. O fenômeno é estável há 5 anos, sem trajetória de melhora.",
-    guideTag: "Etapa 01 · Diagnóstico",
-    guideTitulo: "Comece pelo problema, não pela solução",
-    guideHtml: `
-      <p>Boa parte das políticas falham por inversão da pergunta: começam de "vamos fazer X" e procuram problema para X resolver. A teoria de mudança bem desenhada começa de um problema bem caracterizado.</p>
-      <p>Um bom enunciado de problema responde a quatro perguntas:</p>
-      <ul>
-        <li><strong>Quem</strong> é afetado (grupo específico, não "a sociedade")?</li>
-        <li><strong>Em que dimensão</strong> (renda, saúde, escolaridade...)?</li>
-        <li><strong>Em que magnitude</strong> (proporção, número absoluto)?</li>
-        <li><strong>Com que trajetória</strong> (melhorando, piorando, estável)?</li>
-      </ul>
-      <p>Referência: <em>Avaliação na Prática</em>, vol. 1, FGV CLEAR.</p>
-    `
-  },
-  {
-    n: "02",
-    lbl: "Causas",
-    titulo: "Quais são as <em>causas</em> mais relevantes do problema?",
-    pergunta: "Liste 3-5 fatores que contribuem para o problema. Aqui é onde a evidência entra: cite o que se sabe sobre as causas.",
-    placeholder: "Ex.: Trabalho infantil informal, distância dos equipamentos sociais, fragilidade da articulação intersetorial, etc.",
-    sugest: ["Consultar EvidênciaBR (Protótipo A)", "Decompor por tipo (estrutural / proximal)", "Hierarquizar por importância"],
-    pre: "Quatro causas hipotetizadas a partir da literatura e do diagnóstico local:\n\n(1) Trabalho infantil informal — pressão para complementação de renda familiar.\n(2) Distância e fragilidade dos equipamentos sociais nos territórios afetados.\n(3) Falta de articulação intersetorial — a escola é o único ator que vê o aluno faltar.\n(4) Ausência de sistema de detecção precoce — quando o problema é detectado, o abandono já se consolidou.",
-    guideTag: "Etapa 02 · Causalidade",
-    guideTitulo: "Diferencie causas estruturais de causas proximais",
-    guideHtml: `
-      <p>Causas <em>estruturais</em> são fundas, lentas e custosas de mudar (pobreza, racismo estrutural, infraestrutura precária). Causas <em>proximais</em> são situadas, observáveis, eventualmente mutáveis com política municipal (notificação tardia, falta de articulação).</p>
-      <p>A política municipal típica deve mirar nas causas proximais — é onde tem alavanca. Mas registrar as estruturais ajuda a calibrar expectativas: não prometer impacto de RCT em problema que tem causa estrutural dominante.</p>
-    `
-  },
-  {
-    n: "03",
-    lbl: "Atividades",
-    titulo: "Que <em>atividades</em> a política vai executar?",
-    pergunta: "Descreva as ações concretas. Aqui é o nível operacional: quem faz, com que frequência, em que volume.",
-    placeholder: "Ex.: Visitas domiciliares em até 5 dias após falta. Reuniões intersetoriais mensais.",
-    sugest: ["Especificar frequência e volume", "Definir responsável por ação", "Cruzar com Protótipo D"],
-    pre: "(A) Equipe intersetorial (agente social + professor + ACS) realiza visita domiciliar quando a falta excede 5 dias consecutivos.\n(B) Sistema de alerta cruza chamada escolar com cadastro do CRAS, gerando notificação automática diária.\n(C) Reunião intersetorial mensal entre escolas-CRAS-UBS de cada território.\n(D) Plano de retorno pactuado individualmente com cada família atendida.",
-    guideTag: "Etapa 03 · Operacional",
-    guideTitulo: "Atividades são verificáveis — produtos também",
-    guideHtml: `
-      <p>A diferença entre <em>atividade</em> e <em>produto</em> é sutil mas importante:</p>
-      <ul>
-        <li><strong>Atividade:</strong> visitar família ausente.</li>
-        <li><strong>Produto:</strong> 80% das famílias com criança ausente visitadas em até 7 dias.</li>
-      </ul>
-      <p>Atividades respondem a "o que faço?". Produtos respondem a "o que entreguei?" — são mensuráveis e contratáveis.</p>
-    `
-  },
-  {
-    n: "04",
-    lbl: "Produtos",
-    titulo: "Quais são os <em>produtos</em> esperados?",
-    pergunta: "Produtos são entregas mensuráveis das atividades. Devem ser quantificáveis em prazo, volume e qualidade.",
-    placeholder: "Ex.: 800 famílias atendidas/ano, alerta gerado em até 24h da falta.",
-    sugest: ["Definir meta numérica", "Definir prazo de entrega", "Definir indicador de qualidade"],
-    pre: "(P1) 1.200 famílias atendidas pela busca ativa intersetorial nos primeiros 12 meses.\n(P2) Sistema de alerta operando com latência máxima de 48h entre falta e notificação.\n(P3) 100% dos 4 territórios cobertos por reunião intersetorial mensal documentada.\n(P4) Plano individual de retorno formalizado para 80% das famílias atendidas.",
-    guideTag: "Etapa 04 · Mensuração",
-    guideTitulo: "Produtos contratáveis viabilizam M&E",
-    guideHtml: `
-      <p>Produtos quantificados são a base do monitoramento. Sem eles, "estamos fazendo busca ativa" pode significar visitas semanais ou ações esporádicas — não dá pra avaliar.</p>
-      <p>Boa regra: cada produto cabe numa linha de TR (Protótipo E). Se não cabe, está vago demais.</p>
-    `
-  },
-  {
-    n: "05",
-    lbl: "Resultados",
-    titulo: "Que <em>resultados</em> a política espera produzir?",
-    pergunta: "Resultados são mudanças observáveis na vida dos beneficiários atribuíveis à entrega dos produtos. Médio prazo (1-3 anos).",
-    placeholder: "Ex.: Aumento da taxa de retorno após falta. Redução do abandono.",
-    sugest: ["Distinguir intermediário / final", "Definir indicador-chave", "Especificar prazo"],
-    pre: "(R1) 60% das famílias visitadas retomam frequência regular em até 30 dias após a primeira visita.\n(R2) Tempo médio entre falta e primeiro contato cai de 22 dias (linha de base) para até 7 dias.\n(R3) Taxa de abandono no 7º-9º ano cai de 14% para 9% em 3 anos.\n(R4) Articulação intersetorial passa a ser regular: relatos qualitativos de mudança no fluxo escola-CRAS-UBS.",
-    guideTag: "Etapa 05 · Mudança",
-    guideTitulo: "Distinga resultados intermediários e finais",
-    guideHtml: `
-      <p>R1 e R2 acima são <em>intermediários</em>: mudanças no comportamento operacional/familiar que aparecem rapidamente. R3 é o <em>final</em>: a mudança que justifica a política.</p>
-      <p>Boa avaliação ex-ante registra ambos — assim, mesmo que o resultado final demore para aparecer, o monitoramento de R1/R2 permite saber se a política está funcionando como esperado.</p>
-    `
-  },
-  {
-    n: "06",
-    lbl: "Impacto",
-    titulo: "Qual é o <em>impacto</em> de longo prazo?",
-    pergunta: "Impacto é a mudança final, distal, frequentemente compartilhada com outras políticas. Aqui é onde aspira-se, não onde se promete.",
-    placeholder: "Ex.: Aumento de escolaridade, redução de desigualdade racial educacional.",
-    sugest: ["Conectar a Plano Plurianual", "Citar ODS aplicáveis"],
-    pre: "(I1) Aumento da conclusão do Ensino Fundamental nos territórios afetados, com efeito desproporcional sobre meninos negros — redução da desigualdade racial educacional municipal.\n(I2) Maior ingresso no Ensino Médio (efeito de fluxo) a 5 anos.\n(I3) Conexão com ODS 4 (Educação de qualidade) e ODS 10 (Redução das desigualdades).",
-    guideTag: "Etapa 06 · Aspiração",
-    guideTitulo: "Impacto é horizonte, não promessa",
-    guideHtml: `
-      <p>Impacto raramente é atribuível à política municipal sozinha — é resultado de combinação com Bolsa Família, Educação estadual, políticas econômicas, mercado de trabalho. Registre o impacto pretendido com humildade.</p>
-      <p>O perigo é o oposto: política sem impacto pretendido vira execução por execução. Pelo menos um norte distal precisa estar declarado.</p>
-    `
-  },
-  {
-    n: "07",
-    lbl: "Premissas",
-    titulo: "Que <em>premissas</em> precisam valer?",
-    pergunta: "Premissas são condições que precisam ser verdadeiras para a teoria de mudança funcionar — e que estão fora do controle do programa.",
-    placeholder: "Ex.: Equipe minimamente estável, sistemas integráveis, conselhos atuantes.",
-    sugest: ["Identificar 3-5 premissas críticas", "Avaliar plausibilidade de cada uma"],
-    pre: "(Pr1) A Secretaria de Educação tem estabilidade de equipe gestora para 3 anos.\n(Pr2) Os sistemas de chamada escolar e CRAS são tecnicamente integráveis sob LGPD.\n(Pr3) O conselho municipal de Educação aprova a partilha de dados e supervisiona.\n(Pr4) Não há mudança brusca no PBF/Cadastro Único que afete a base do programa.\n(Pr5) Existe coordenação intersetorial real — não só formal — para sustentar o programa.",
-    guideTag: "Etapa 07 · Condições",
-    guideTitulo: "Premissas não testadas são onde políticas falham",
-    guideHtml: `
-      <p>A maioria das políticas que falham não falham por má execução das atividades, mas porque uma premissa não realista virou ponto-cego.</p>
-      <p>Exemplos clássicos: "a equipe vai cooperar", "os sistemas vão conversar", "o gestor vai priorizar". Quando essas premissas falham, todo o resto desmorona.</p>
-      <p>Registrar as premissas é metade do trabalho de tornar a política avaliável.</p>
-    `
-  },
-  {
-    n: "08",
-    lbl: "Riscos",
-    titulo: "Quais são os <em>riscos</em> e como mitigar?",
-    pergunta: "Riscos são eventos previsíveis que podem desviar a política. Para cada um, uma medida de mitigação.",
-    placeholder: "Ex.: Risco de mudança de gestão; mitigação via institucionalização legal.",
-    sugest: ["Avaliar probabilidade e impacto", "Definir mitigação para cada risco"],
-    pre: "(Ri1) Mudança de gestão no ano eleitoral pode interromper o programa. Mitigação: institucionalização via lei municipal e inclusão no PPA.\n(Ri2) Sobrecarga da equipe de CRAS pode reduzir efetividade. Mitigação: pactuar com Assistência teto de visitas/equipe.\n(Ri3) Famílias podem rejeitar visita domiciliar (risco de revitimização). Mitigação: protocolo com Direitos Humanos e Defensoria.\n(Ri4) Sistema de alerta pode gerar excesso de notificações inúteis. Mitigação: piloto de 6 meses com calibração de limiar.",
-    guideTag: "Etapa 08 · Defesas",
-    guideTitulo: "Risco mapeado é risco que vira plano",
-    guideHtml: `
-      <p>O exercício de listar riscos com mitigação é o que separa um documento de planejamento de uma teoria de mudança. Riscos não mapeados viram crises; riscos mapeados viram cláusulas, comitês, protocolos.</p>
-      <p>Boa prática: nem todo risco precisa de mitigação plena. Alguns só precisam ser monitorados e respondidos quando aparecem. Marque qual é qual.</p>
-    `
-  }
-];
-
-let currentStep = 0;
-let answers = STEPS.map(s => s.pre);
-
-function renderBar() {
-  const bar = document.getElementById('steps-bar');
-  bar.innerHTML = STEPS.map((s, i) => `
-    <button class="step-pill ${i === currentStep ? 'active' : (i < currentStep ? 'done' : '')}" data-i="${i}">
-      <span class="num">${s.n}</span>
-      <span class="lbl">${s.lbl}</span>
-    </button>
-  `).join('');
-  bar.querySelectorAll('button').forEach(b => {
-    b.addEventListener('click', () => { goToStep(parseInt(b.dataset.i)); });
-  });
+function parseJSON(text){
+  let t = (text||"").replace(/```json|```/g, "").trim();
+  const s = t.indexOf("{"), e = t.lastIndexOf("}");
+  if (s !== -1 && e !== -1) t = t.slice(s, e+1);
+  return JSON.parse(t);
+}
+async function ask(question){
+  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ produto: PRODUTO, question }) });
+  const json = await r.json();
+  if (json.error) throw new Error(json.error.message || "Erro na API");
+  const cand = json.candidates && json.candidates[0];
+  const txt = (cand?.content?.parts || []).map(p=>p.text).filter(Boolean).join("");
+  const parsed = parseJSON(txt);
+  const chunks = cand?.groundingMetadata?.groundingChunks || [];
+  const grounded = chunks.map(c=>({ titulo:c.web?.title||c.web?.uri, url:c.web?.uri })).filter(x=>x.url);
+  if (grounded.length && (!parsed.fontes || !parsed.fontes.length)) parsed.fontes = grounded;
+  return parsed;
 }
 
-function renderStep() {
-  const s = STEPS[currentStep];
-  const main = document.getElementById('wizard-area');
-  main.innerHTML = `
-    <div class="step-content">
-      <div class="step-main">
-        <h2>${s.titulo}</h2>
-        <p class="step-q">${s.pergunta}</p>
-        <textarea class="step-input" id="step-input" placeholder="${s.placeholder}">${answers[currentStep]}</textarea>
-        <div class="step-suggestions">
-          <h5>Sugestões da ferramenta</h5>
-          <div class="suggest-chips">
-            ${s.sugest.map(x => `<button class="suggest-chip">${x}</button>`).join('')}
+const C = { navy:"#01354A", navy2:"#012030", blue:"#08B0EE", green:"#98C43B", paper:"#F7F5EF", ink:"#1A1A1C", amber:"#E0992E", rust:"#C2572E" };
+const NIVEL = {
+  A:{cor:C.green,rotulo:"Forte",desc:"Revisões sistemáticas / múltiplos ECRs"},
+  B:{cor:C.blue,rotulo:"Moderada",desc:"Estudo controlado ou quase-experimental"},
+  C:{cor:C.amber,rotulo:"Limitada",desc:"Estudos observacionais / séries de casos"},
+  D:{cor:C.rust,rotulo:"Incipiente",desc:"Opinião de especialista / sem evidência robusta"},
+};
+const INTENS = { "Baixo":C.green, "Médio":C.amber, "Medio":C.amber, "Alto":C.rust };
+const EXEMPLOS = ["Programa de busca ativa contra a evasão escolar", "Transferência de renda para reduzir trabalho infantil", "Telemedicina para reduzir filas na atenção primária", "Mentoria para reduzir reincidência juvenil"];
+
+function Selo({texto, cor, escuro}){
+  return <span style={{ background:cor, color:escuro?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>{texto}</span>;
+}
+function NivelSelo({nivel}){
+  const n = NIVEL[nivel] || NIVEL.D;
+  return <span title={n.desc}><Selo texto={"Nível "+nivel+" · "+n.rotulo} cor={n.cor} escuro={nivel==="A"||nivel==="C"} /></span>;
+}
+function Fontes({fontes}){
+  if(!fontes || !fontes.length) return null;
+  return (
+    <div className="ebr-fontes" style={{ marginTop:24 }}>
+      <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:7 }}>Fontes consultadas</div>
+      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+        {fontes.map((f,i)=>(<a key={i} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize:11.5, color:"#8a8576", textDecoration:"none", lineHeight:1.45 }}>· {f.titulo} ↗</a>))}
+      </div>
+    </div>
+  );
+}
+function NavyBox({rotulo, children}){
+  return (
+    <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
+      <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>{rotulo}</div>
+      <div style={{ fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.88)" }}>{children}</div>
+    </div>
+  );
+}
+
+
+function Elo({rotulo, itens, cor}){
+  return (
+    <div style={{ background:"#fff", border:"1px solid #e4ded2", borderLeft:`5px solid ${cor}`, borderRadius:11, padding:"13px 16px" }}>
+      <div className="ebr-mono" style={{ fontSize:10, color:cor, marginBottom:7 }}>{rotulo}</div>
+      <ul style={{ margin:0, paddingLeft:18, fontSize:14.5, lineHeight:1.5 }}>{(itens||[]).map((t,i)=><li key={i} style={{ marginBottom:4 }}>{t}</li>)}</ul>
+    </div>
+  );
+}
+function Seta(){ return <div style={{ textAlign:"center", color:"#bdb7a8", fontSize:18, lineHeight:1, margin:"2px 0" }}>↓</div>; }
+function renderResult(res){
+  const c = res.cadeia || {};
+  return (<div>
+    <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
+    <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 24px", fontWeight:500 }}>{res.problema}</p>
+    <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:12 }}>Cadeia causal</div>
+    <Elo rotulo="Causas" itens={c.causas} cor={C.rust} /><Seta/>
+    <Elo rotulo="Atividades" itens={c.atividades} cor={C.amber} /><Seta/>
+    <Elo rotulo="Produtos" itens={c.produtos} cor={C.blue} /><Seta/>
+    <Elo rotulo="Resultados" itens={c.resultados} cor={C.green} /><Seta/>
+    <div style={{ background:C.navy, color:"#fff", borderRadius:11, padding:"15px 18px" }}>
+      <div className="ebr-mono" style={{ fontSize:10, color:C.green, marginBottom:6 }}>Impacto de longo prazo</div>
+      <div style={{ fontSize:16, lineHeight:1.45 }}>{c.impacto}</div>
+    </div>
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginTop:18 }}>
+      <div style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:11, padding:"14px 16px" }}>
+        <div className="ebr-mono" style={{ fontSize:10, color:C.blue, marginBottom:8 }}>Premissas críticas</div>
+        <ul style={{ margin:0, paddingLeft:18, fontSize:13.5, lineHeight:1.5 }}>{(res.premissas||[]).map((t,i)=><li key={i} style={{ marginBottom:5 }}>{t}</li>)}</ul>
+      </div>
+      <div style={{ background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:11, padding:"14px 16px" }}>
+        <div className="ebr-mono" style={{ fontSize:10, color:C.rust, marginBottom:8 }}>Riscos</div>
+        <ul style={{ margin:0, paddingLeft:18, fontSize:13.5, lineHeight:1.5 }}>{(res.riscos||[]).map((t,i)=><li key={i} style={{ marginBottom:5 }}>{t}</li>)}</ul>
+      </div>
+    </div>
+    {res.avaliacao && <NavyBox rotulo="Desenho avaliativo sugerido"><strong style={{ color:"#fff" }}>{res.avaliacao.desenho}.</strong> {res.avaliacao.justificativa}</NavyBox>}
+    <Fontes fontes={res.fontes} />
+    <p style={{ marginTop:24, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>Estrutura gerada por IA a partir do que você descreveu — um ponto de partida para a discussão da equipe, não uma teoria de mudança validada.</p>
+  </div>);
+}
+
+
+function App(){
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [res, setRes] = useState(null);
+  const [err, setErr] = useState(null);
+  async function run(p){
+    const texto = (p ?? q).trim();
+    if(!texto || loading) return;
+    setQ(texto); setLoading(true); setErr(null); setRes(null);
+    try{ setRes(await ask(texto)); }
+    catch(e){ setErr("Não consegui processar. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
+    finally{ setLoading(false); }
+  }
+  return (
+    <div style={{ fontFamily:"'DM Sans',sans-serif", color:C.ink, background:C.paper, minHeight:"100vh" }}>
+      <header style={{ background:C.navy, color:"#fff", padding:"30px 28px 34px", position:"relative", overflow:"hidden" }}>
+        <div className="no-print" style={{ position:"absolute", top:-120, right:-80, width:320, height:320, borderRadius:"50%", background:C.blue, opacity:.08 }} />
+        <div className="no-print" style={{ position:"absolute", bottom:-140, left:-60, width:260, height:260, borderRadius:"50%", background:C.green, opacity:.07 }} />
+        <div style={{ maxWidth:920, margin:"0 auto", position:"relative" }}>
+          <a href="../" className="no-print ebr-mono" style={{ fontSize:10, color:C.blue, textDecoration:"none", display:"inline-block", marginBottom:12 }}>← Portal dos protótipos</a>
+          <div className="ebr-mono" style={{ fontSize:11, color:C.blue, marginBottom:14 }}>CLEAR Lab · Protótipo F · Camada 03 — Propor · PILOTO</div>
+          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>Construtor de <span style={{ fontStyle:"italic", color:C.blue }}>Teoria de Mudança</span></h1>
+          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>Descreva o problema ou a ideia de programa. O sistema estrutura a cadeia causal — causas, atividades, produtos, resultados, impacto — com premissas, riscos e desenho avaliativo sugerido.</p>
+        </div>
+      </header>
+      <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
+        
+        <div className="no-print" style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
+          <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Problema ou ideia de programa</label>
+          <textarea value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
+            placeholder="Ex.: criar um programa de busca ativa para reduzir a evasão escolar" rows={3}
+            style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
+            <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
+            <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
+              style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
+              {loading ? "Processando…" : "Estruturar"}
+            </button>
           </div>
         </div>
-      </div>
-      <aside class="guide">
-        <div class="guide-tag">${s.guideTag}</div>
-        <h4>${s.guideTitulo}</h4>
-        ${s.guideHtml}
-      </aside>
+        {!res && !loading && (
+          <div className="no-print" style={{ marginTop:16 }}>
+            <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {EXEMPLOS.map(ex=>(<button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>{ex}</button>))}
+            </div>
+          </div>
+        )}
+        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Estruturando a cadeia causal…</span></div>)}
+        {err && (<div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>{err}</div>)}
+        {res && (<div className="ebr-rise" style={{ marginTop:26 }}>
+          <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
+            <button className="ebr-btn" onClick={()=>window.print()} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 14px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>Imprimir / PDF</button>
+          </div>
+          {renderResult(res)}
+        </div>)}
+      </main>
     </div>
-  `;
-  document.getElementById('step-input').addEventListener('input', e => {
-    answers[currentStep] = e.target.value;
-  });
-  renderNav();
+  );
 }
-
-function renderNav() {
-  const nav = document.getElementById('step-nav');
-  const last = currentStep === STEPS.length - 1;
-  nav.innerHTML = `
-    <button class="btn btn-ghost" id="prev-btn" ${currentStep === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>← Etapa anterior</button>
-    <span class="step-nav-info">Etapa ${currentStep + 1} de ${STEPS.length}</span>
-    <button class="btn btn-primary" id="next-btn">${last ? 'Gerar diagrama →' : 'Próxima etapa →'}</button>
-  `;
-  document.getElementById('prev-btn').addEventListener('click', () => {
-    if (currentStep > 0) goToStep(currentStep - 1);
-  });
-  document.getElementById('next-btn').addEventListener('click', () => {
-    if (last) {
-      renderDiagrama();
-    } else {
-      goToStep(currentStep + 1);
-    }
-  });
-}
-
-function goToStep(i) {
-  currentStep = i;
-  document.getElementById('diagrama-area').classList.remove('show');
-  document.getElementById('wizard-area').style.display = '';
-  renderBar();
-  renderStep();
-  window.scrollTo({top: document.querySelector('.steps-bar').offsetTop - 80, behavior: 'smooth'});
-}
-
-function extractItems(text) {
-  // Pega as primeiras 2-3 linhas que parecem itens
-  return text.split('\n').filter(l => l.trim().length > 5).slice(0, 3).map(l => l.replace(/^\([A-Za-z0-9]+\)\s*/, '').replace(/^[0-9]+\.\s*/, '').trim());
-}
-
-function renderDiagrama() {
-  document.getElementById('wizard-area').style.display = 'none';
-  document.getElementById('step-nav').style.display = 'none';
-  const area = document.getElementById('diagrama-area');
-
-  // Marca todas as etapas como done
-  document.querySelectorAll('.step-pill').forEach(p => { p.classList.remove('active'); p.classList.add('done'); });
-
-  area.innerHTML = `
-    <div class="diagrama">
-      <div class="diagrama-title">Teoria de mudança — programa de busca ativa escolar com alerta precoce</div>
-      <div class="diagrama-sub">Construída a partir das suas respostas · ${STEPS.length} etapas · cadeia causal completa</div>
-
-      <div class="cadeia">
-        <div class="elo">
-          <div class="elo-rotulo">Problema · Causas</div>
-          <div class="elo-titulo">Abandono no 7º-9º ano</div>
-          <ul class="elo-bullets">
-            ${extractItems(answers[1]).map(c => `<li>${c}</li>`).join('')}
-          </ul>
-        </div>
-        <div class="elo">
-          <div class="elo-rotulo">Atividades · Insumos</div>
-          <div class="elo-titulo">O que vai ser feito</div>
-          <ul class="elo-bullets">
-            ${extractItems(answers[2]).map(c => `<li>${c}</li>`).join('')}
-          </ul>
-        </div>
-        <div class="elo">
-          <div class="elo-rotulo">Produtos</div>
-          <div class="elo-titulo">Entregas mensuráveis</div>
-          <ul class="elo-bullets">
-            ${extractItems(answers[3]).map(c => `<li>${c}</li>`).join('')}
-          </ul>
-        </div>
-        <div class="elo">
-          <div class="elo-rotulo">Resultados</div>
-          <div class="elo-titulo">Mudança em 1-3 anos</div>
-          <ul class="elo-bullets">
-            ${extractItems(answers[4]).map(c => `<li>${c}</li>`).join('')}
-          </ul>
-        </div>
-        <div class="elo">
-          <div class="elo-rotulo">Impacto</div>
-          <div class="elo-titulo">Horizonte de longo prazo</div>
-          <ul class="elo-bullets">
-            ${extractItems(answers[5]).map(c => `<li>${c}</li>`).join('')}
-          </ul>
-        </div>
-      </div>
-
-      <div class="flank">
-        <div class="flank-box flank-box-premissa">
-          <h5><strong>Premissas</strong> · condições fora do controle</h5>
-          <ul>
-            ${extractItems(answers[6]).map(c => `<li>${c}</li>`).join('')}
-          </ul>
-        </div>
-        <div class="flank-box flank-box-risco">
-          <h5><strong>Riscos</strong> · com mitigação</h5>
-          <ul>
-            ${extractItems(answers[7]).map(c => `<li>${c}</li>`).join('')}
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="desenho-card">
-      <div class="desenho-tag">Sugestão de desenho avaliativo</div>
-      <div class="desenho-tit">Diferenças-em-diferenças (DiD) com escalonamento territorial</div>
-      <p>O programa atende 4 territórios. Se a implementação for <em>escalonada</em> — ou seja, dois territórios começam no primeiro semestre e dois no segundo — você tem grupo de tratamento e grupo de comparação válidos para DiD.</p>
-      <p>Alternativa, se não houver escalonamento: <strong>matching territorial</strong> com municípios pareados (Protótipo B) como contrafactual.</p>
-      <div class="desenho-detail">
-        <strong>Por que DiD escalonado?</strong> Sua teoria tem resultados intermediários (R1, R2) observáveis em 6-12 meses — janela viável.<br>
-        <strong>Atenção:</strong> R3 (taxa de abandono) demora 12-24 meses; pode exigir janela mais longa.<br>
-        <strong>Limitação:</strong> DiD pressupõe trajetórias paralelas pré-intervenção — verifique 2-3 anos de série histórica antes.
-      </div>
-    </div>
-
-    <div class="note">
-      <strong>Atenção sobre o que esta teoria não resolve.</strong> Mesmo bem desenhada, uma teoria de mudança não substitui evidência sobre se as atividades funcionam (vá ao Protótipo A) nem substitui contratação bem feita (Protótipo E). Ela é a peça que conecta diagnóstico → execução → avaliação. As três precisam estar coerentes.
-    </div>
-
-    <div class="diag-actions">
-      <button class="btn btn-primary" onclick="window.print()">Exportar como PDF</button>
-      <button class="btn" onclick="goToStep(0)">← Editar respostas</button>
-      <button class="btn btn-ghost" onclick="alert('Mockup: em produção, este botão integraria com o Protótipo D (Gerador de Opções) e o E (Editor de TR), passando a teoria de mudança como contexto.')">Conectar a Gerador de Opções →</button>
-    </div>
-  `;
-
-  area.classList.add('show');
-  window.scrollTo({top: 0, behavior: 'smooth'});
-}
-
-window.goToStep = goToStep;
-
-renderBar();
-renderStep();
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
