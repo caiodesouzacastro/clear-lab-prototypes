@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Teoria de Mudança — CLEAR Lab (piloto)</title>
-<meta name="description" content="Estrutura a cadeia causal de um programa e sugere desenho avaliativo. Piloto interno CLEAR Lab." />
+<title>Auxiliar de Teoria de Mudança — CLEAR Lab (piloto)</title>
+<meta name="description" content="Oferece elementos para o gestor construir sua teoria de mudança. Piloto interno CLEAR Lab." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -113,8 +113,15 @@ function renderResult(res){
   return (<div>
     <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
     <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 24px", fontWeight:500 }}>{res.problema}</p>
-    <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:12 }}>Cadeia causal</div>
-    <Elo rotulo="Causas" itens={c.causas} cor={C.rust} /><Seta/>
+    {res.causas && res.causas.length>0 && (
+      <div style={{ background:"#fff", border:"1px solid #e4ded2", borderLeft:`5px solid ${C.rust}`, borderRadius:11, padding:"14px 16px", marginBottom:22 }}>
+        <div className="ebr-mono" style={{ fontSize:10, color:C.rust, marginBottom:8 }}>Diagnóstico · causas prováveis</div>
+        <ul style={{ margin:0, paddingLeft:18, fontSize:14.5, lineHeight:1.5 }}>{res.causas.map((t,i)=><li key={i} style={{ marginBottom:5 }}>{t}</li>)}</ul>
+      </div>
+    )}
+    <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:4 }}>Cadeia da teoria de mudança</div>
+    <div style={{ fontSize:12.5, color:"#8a8576", marginBottom:14 }}>Elementos para você montar a sua — insumos → atividades → produtos → resultados → impacto.</div>
+    <Elo rotulo="Insumos" itens={c.insumos} cor={C.navy} /><Seta/>
     <Elo rotulo="Atividades" itens={c.atividades} cor={C.amber} /><Seta/>
     <Elo rotulo="Produtos" itens={c.produtos} cor={C.blue} /><Seta/>
     <Elo rotulo="Resultados" itens={c.resultados} cor={C.green} /><Seta/>
@@ -134,7 +141,7 @@ function renderResult(res){
     </div>
     {res.avaliacao && <NavyBox rotulo="Desenho avaliativo sugerido"><strong style={{ color:"#fff" }}>{res.avaliacao.desenho}.</strong> {res.avaliacao.justificativa}</NavyBox>}
     <Fontes fontes={res.fontes} />
-    <p style={{ marginTop:24, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>Estrutura gerada por IA a partir do que você descreveu — um ponto de partida para a discussão da equipe, não uma teoria de mudança validada.</p>
+    <p style={{ marginTop:24, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>Estes são <strong>elementos para construção</strong>, não uma teoria de mudança pronta. Use como ponto de partida para a equipe montar e validar a sua.</p>
   </div>);
 }
 
@@ -160,8 +167,8 @@ function App(){
         <div style={{ maxWidth:920, margin:"0 auto", position:"relative" }}>
           <a href="../" className="no-print ebr-mono" style={{ fontSize:10, color:C.blue, textDecoration:"none", display:"inline-block", marginBottom:12 }}>← Portal dos protótipos</a>
           <div className="ebr-mono" style={{ fontSize:11, color:C.blue, marginBottom:14 }}>CLEAR Lab · Protótipo F · Camada 03 — Propor · PILOTO</div>
-          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>Construtor de <span style={{ fontStyle:"italic", color:C.blue }}>Teoria de Mudança</span></h1>
-          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>Descreva o problema ou a ideia de programa. O sistema estrutura a cadeia causal — causas, atividades, produtos, resultados, impacto — com premissas, riscos e desenho avaliativo sugerido.</p>
+          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>Auxiliar de <span style={{ fontStyle:"italic", color:C.blue }}>Teoria de Mudança</span></h1>
+          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>Descreva o problema ou a ideia de programa. O sistema levanta as causas prováveis e sugere os elementos da cadeia — insumos, atividades, produtos, resultados, impacto — com premissas, riscos e desenho avaliativo. São elementos para você construir a sua ToC, não uma versão pronta.</p>
         </div>
       </header>
       <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
@@ -175,7 +182,7 @@ function App(){
             <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
             <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
               style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
-              {loading ? "Processando…" : "Estruturar"}
+              {loading ? "Processando…" : "Levantar elementos"}
             </button>
           </div>
         </div>
@@ -187,7 +194,7 @@ function App(){
             </div>
           </div>
         )}
-        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Estruturando a cadeia causal…</span></div>)}
+        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Levantando causas e elementos da cadeia…</span></div>)}
         {err && (<div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>{err}</div>)}
         {res && (<div className="ebr-rise" style={{ marginTop:26 }}>
           <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
