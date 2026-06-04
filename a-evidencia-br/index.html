@@ -25,50 +25,22 @@
   @keyframes ebrup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   .ebr-rise{animation:ebrup .5s ease both;}
   a{ color:#01354A; }
-  textarea, input{ font-family:'DM Sans',sans-serif; }
+  textarea{ font-family:'DM Sans',sans-serif; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect } = React;
+const { useState } = React;
 
 /* ============================================================================
-   EvidênciaBR Express — PILOTO (motor: Google Gemini, free tier)
-   CLEAR Lab · FGV EESP
+   EvidênciaBR Express — PILOTO (motor: Gemini via Cloudflare Worker)
+   A chave Gemini fica no Worker (secret), não aqui. Ninguém precisa configurar.
 
-   Motor de inferência isolado em synthesizeEvidence().
-   Chave Gemini gratuita: https://aistudio.google.com  (sem cartão)
-   A chave fica APENAS no navegador (localStorage) — nunca no repositório.
-   Para tornar público no futuro: trocar BYOK por um Cloudflare Worker que
-   esconda a chave (ver documento de arquitetura).
+   >>> COLE AQUI A URL DO SEU WORKER <<<
    ========================================================================== */
-
-const KEY_STORE = "ebr_gemini_key";
-const MODEL = "gemini-2.5-flash";
-
-const SYSTEM_PROMPT = `Você é o EvidênciaBR Express, um sintetizador de evidência para gestores públicos MUNICIPAIS brasileiros.
-
-Fluxo:
-1. Use a busca para encontrar evidência REAL e verificável sobre a pergunta (revisões sistemáticas, avaliações de impacto, What Works Centres, Campbell, J-PAL, EVIPNet, IPEA, dados de programas brasileiros).
-2. Classifique cada opção de intervenção por nível de evidência no padrão da Diretriz Metodológica do Ministério da Saúde:
-   - A: revisões sistemáticas / múltiplos ensaios controlados
-   - B: estudo controlado ou quase-experimental isolado
-   - C: estudos observacionais, séries de casos
-   - D: opinião de especialistas / sem evidência robusta
-3. Seja honesto: se a evidência for fraca ou ausente, diga. Avalie transferibilidade ao contexto municipal brasileiro (não assuma que estudo internacional transfere direto).
-
-Responda APENAS com um objeto JSON válido, SEM markdown, SEM cercas, SEM texto antes ou depois. Formato:
-{
-  "problema": "reformulação clara e técnica do problema de política",
-  "opcoes": [
-    {"titulo":"nome curto","mecanismo":"como deveria funcionar (1-2 frases)","nivel":"A|B|C|D","evidencia":"o que a evidência mostra, com magnitude se houver (2-3 frases)","transferibilidade":"ressalva sobre aplicar no contexto municipal BR (1 frase)"}
-  ],
-  "limitacoes":"o que esta síntese NÃO cobre / cuidados (2-3 frases)",
-  "fontes":[{"titulo":"título","url":"url real"}]
-}
-Inclua de 3 a 5 opções e de 3 a 6 fontes reais. Português do Brasil.`;
+const WORKER_URL = "https://evidencia-br.caiodesouzacastro28.workers.dev";
 
 function parseJSON(text){
   let t = (text||"").replace(/```json|```/g, "").trim();
@@ -77,31 +49,19 @@ function parseJSON(text){
   return JSON.parse(t);
 }
 
-async function synthesizeEvidence(question, apiKey){
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
-    {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        systemInstruction:{ parts:[{ text: SYSTEM_PROMPT }] },
-        contents:[{ role:"user", parts:[{ text: question }] }],
-        tools:[{ googleSearch:{} }],                 // grounding com busca real
-        generationConfig:{ temperature:0.3 }
-      })
-    }
-  );
+async function synthesizeEvidence(question){
+  const r = await fetch(WORKER_URL, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ question })
+  });
   const j = await r.json();
-  if (j.error) throw new Error(j.error.message || "Erro na API Gemini");
+  if (j.error) throw new Error(j.error.message || "Erro na API");
   const cand = j.candidates && j.candidates[0];
   const txt = (cand?.content?.parts || []).map(p=>p.text).filter(Boolean).join("");
   const parsed = parseJSON(txt);
-
-  // Fontes REAIS que o Gemini de fato consultou (anti-alucinação de URL):
   const chunks = cand?.groundingMetadata?.groundingChunks || [];
-  const grounded = chunks
-    .map(c => ({ titulo: c.web?.title || c.web?.uri, url: c.web?.uri }))
-    .filter(x => x.url);
+  const grounded = chunks.map(c=>({ titulo:c.web?.title||c.web?.uri, url:c.web?.uri })).filter(x=>x.url);
   if (grounded.length) parsed.fontes = grounded;
   return parsed;
 }
@@ -121,47 +81,21 @@ const EXEMPLOS = [
   "Como aumentar a adesão à creche em territórios vulneráveis?",
 ];
 
-function KeyGate({ onSave }){
-  const [v, setV] = useState("");
-  return (
-    <div style={{ background:"#fff", border:`1px solid ${C.blue}`, borderRadius:14, padding:"20px 22px", marginTop:18 }}>
-      <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7, marginBottom:8 }}>Configuração · uso interno</div>
-      <p style={{ margin:"0 0 12px", fontSize:14.5, lineHeight:1.55 }}>
-        Cole sua chave gratuita do <strong>Google AI Studio</strong>. Ela fica só neste navegador (localStorage),
-        nunca no repositório. Pegue a sua em <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a> (sem cartão).
-      </p>
-      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-        <input type="password" value={v} onChange={e=>setV(e.target.value)} placeholder="AIza…"
-          style={{ flex:1, minWidth:220, border:"1px solid #e4ded2", borderRadius:9, padding:"10px 12px", fontSize:14 }} />
-        <button className="ebr-btn" onClick={()=>v.trim() && onSave(v.trim())}
-          style={{ background:C.navy, color:"#fff", border:"none", borderRadius:9, padding:"10px 20px", fontSize:14, fontWeight:700 }}>
-          Salvar chave
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function App(){
-  const [apiKey, setApiKey] = useState("");
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState(null);
   const [err, setErr] = useState(null);
 
-  useEffect(()=>{ try{ const k = localStorage.getItem(KEY_STORE); if(k) setApiKey(k); }catch(e){} }, []);
-  function saveKey(k){ try{ localStorage.setItem(KEY_STORE, k); }catch(e){} setApiKey(k); }
-  function clearKey(){ try{ localStorage.removeItem(KEY_STORE); }catch(e){} setApiKey(""); }
-
   async function run(pergunta){
     const texto = (pergunta ?? q).trim();
-    if(!texto || loading || !apiKey) return;
+    if(!texto || loading) return;
     setQ(texto); setLoading(true); setErr(null); setRes(null);
     try{
-      const out = await synthesizeEvidence(texto, apiKey);
+      const out = await synthesizeEvidence(texto);
       setRes(out);
     }catch(e){
-      setErr("Não consegui montar a síntese. Verifique a chave/limite diário do Gemini ou reformule a pergunta. (" + (e.message||"") + ")");
+      setErr("Não consegui montar a síntese. Verifique se o Worker está no ar e a chave configurada, ou reformule a pergunta. (" + (e.message||"") + ")");
     }finally{ setLoading(false); }
   }
 
@@ -183,125 +117,115 @@ function App(){
       </header>
 
       <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
-        {!apiKey && <KeyGate onSave={saveKey} />}
+        <div style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
+          <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Pergunta de política</label>
+          <textarea value={q} onChange={e=>setQ(e.target.value)}
+            onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
+            placeholder="Ex.: o que funciona para reduzir a evasão escolar no ensino médio?"
+            rows={3}
+            style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
+            <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
+            <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
+              style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
+              {loading ? "Sintetizando…" : "Sintetizar evidência"}
+            </button>
+          </div>
+        </div>
 
-        {apiKey && (
-          <React.Fragment>
-            <div style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
-              <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Pergunta de política</label>
-              <textarea value={q} onChange={e=>setQ(e.target.value)}
-                onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
-                placeholder="Ex.: o que funciona para reduzir a evasão escolar no ensino médio?"
-                rows={3}
-                style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
-                <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
-                <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
-                  style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
-                  {loading ? "Sintetizando…" : "Sintetizar evidência"}
+        {!res && !loading && (
+          <div style={{ marginTop:16 }}>
+            <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {EXEMPLOS.map(ex=>(
+                <button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)}
+                  style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>
+                  {ex}
                 </button>
-              </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}>
+            <span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} />
+            <span style={{ fontSize:14.5 }}>Buscando evidência real e avaliando níveis…</span>
+          </div>
+        )}
+
+        {err && (
+          <div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>
+            {err}
+          </div>
+        )}
+
+        {res && (
+          <div className="ebr-rise" style={{ marginTop:26 }}>
+            <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
+            <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 28px", fontWeight:500 }}>{res.problema}</p>
+
+            <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:12 }}>Opções de intervenção · por nível de evidência</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              {(res.opcoes||[]).map((o,i)=>{
+                const n = NIVEL[o.nivel] || NIVEL.D;
+                return (
+                  <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"18px 20px", borderLeft:`5px solid ${n.cor}` }}>
+                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+                      <h3 className="ebr-serif" style={{ fontSize:19.5, margin:0, fontWeight:600, color:C.navy }}>{o.titulo}</h3>
+                      <span title={n.desc} style={{ background:n.cor, color:(o.nivel==="A"||o.nivel==="C")?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>
+                        Nível {o.nivel} · {n.rotulo}
+                      </span>
+                    </div>
+                    {o.mecanismo && <p style={{ margin:"9px 0 0", fontSize:14, color:"#6b6757", fontStyle:"italic" }}>{o.mecanismo}</p>}
+                    <p style={{ margin:"11px 0 0", fontSize:15, lineHeight:1.58 }}>{o.evidencia}</p>
+                    {o.transferibilidade && (
+                      <div style={{ marginTop:12, padding:"9px 12px", background:C.paper, borderRadius:8, fontSize:13, color:"#5a5648" }}>
+                        <strong style={{ color:C.navy }}>Transferibilidade · </strong>{o.transferibilidade}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            {!res && !loading && (
-              <div style={{ marginTop:16 }}>
-                <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-                  {EXEMPLOS.map(ex=>(
-                    <button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)}
-                      style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>
-                      {ex}
-                    </button>
+            {res.limitacoes && (
+              <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
+                <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>Limitações desta síntese</div>
+                <p style={{ margin:0, fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.85)" }}>{res.limitacoes}</p>
+              </div>
+            )}
+
+            {res.fontes && res.fontes.length>0 && (
+              <div style={{ marginTop:22 }}>
+                <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:10 }}>Fontes consultadas</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {res.fontes.map((f,i)=>(
+                    <a key={i} href={f.url} target="_blank" rel="noreferrer"
+                      style={{ fontSize:13.5, color:C.navy, textDecoration:"none", borderBottom:`1px solid ${C.blue}`, alignSelf:"flex-start", paddingBottom:1 }}>
+                      {f.titulo} ↗
+                    </a>
                   ))}
                 </div>
               </div>
             )}
 
-            {loading && (
-              <div style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}>
-                <span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} />
-                <span style={{ fontSize:14.5 }}>Buscando evidência real e avaliando níveis…</span>
-              </div>
-            )}
-
-            {err && (
-              <div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>
-                {err}
-              </div>
-            )}
-
-            {res && (
-              <div className="ebr-rise" style={{ marginTop:26 }}>
-                <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
-                <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 28px", fontWeight:500 }}>{res.problema}</p>
-
-                <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:12 }}>Opções de intervenção · por nível de evidência</div>
-                <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-                  {(res.opcoes||[]).map((o,i)=>{
-                    const n = NIVEL[o.nivel] || NIVEL.D;
-                    return (
-                      <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"18px 20px", borderLeft:`5px solid ${n.cor}` }}>
-                        <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
-                          <h3 className="ebr-serif" style={{ fontSize:19.5, margin:0, fontWeight:600, color:C.navy }}>{o.titulo}</h3>
-                          <span title={n.desc} style={{ background:n.cor, color:(o.nivel==="A"||o.nivel==="C")?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>
-                            Nível {o.nivel} · {n.rotulo}
-                          </span>
-                        </div>
-                        {o.mecanismo && <p style={{ margin:"9px 0 0", fontSize:14, color:"#6b6757", fontStyle:"italic" }}>{o.mecanismo}</p>}
-                        <p style={{ margin:"11px 0 0", fontSize:15, lineHeight:1.58 }}>{o.evidencia}</p>
-                        {o.transferibilidade && (
-                          <div style={{ marginTop:12, padding:"9px 12px", background:C.paper, borderRadius:8, fontSize:13, color:"#5a5648" }}>
-                            <strong style={{ color:C.navy }}>Transferibilidade · </strong>{o.transferibilidade}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {res.limitacoes && (
-                  <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
-                    <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>Limitações desta síntese</div>
-                    <p style={{ margin:0, fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.85)" }}>{res.limitacoes}</p>
+            <div style={{ marginTop:28, paddingTop:20, borderTop:"1px solid #e4ded2" }}>
+              <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:10 }}>Escala de evidência (padrão Diretriz/MS)</div>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:14 }}>
+                {Object.entries(NIVEL).map(([k,v])=>(
+                  <div key={k} style={{ display:"flex", alignItems:"center", gap:7, fontSize:12, color:"#5a5648" }}>
+                    <span style={{ width:12, height:12, borderRadius:3, background:v.cor }} />
+                    <strong>{k}</strong> · {v.desc}
                   </div>
-                )}
-
-                {res.fontes && res.fontes.length>0 && (
-                  <div style={{ marginTop:22 }}>
-                    <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:10 }}>Fontes consultadas</div>
-                    <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                      {res.fontes.map((f,i)=>(
-                        <a key={i} href={f.url} target="_blank" rel="noreferrer"
-                          style={{ fontSize:13.5, color:C.navy, textDecoration:"none", borderBottom:`1px solid ${C.blue}`, alignSelf:"flex-start", paddingBottom:1 }}>
-                          {f.titulo} ↗
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div style={{ marginTop:28, paddingTop:20, borderTop:"1px solid #e4ded2" }}>
-                  <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:10 }}>Escala de evidência (padrão Diretriz/MS)</div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:14 }}>
-                    {Object.entries(NIVEL).map(([k,v])=>(
-                      <div key={k} style={{ display:"flex", alignItems:"center", gap:7, fontSize:12, color:"#5a5648" }}>
-                        <span style={{ width:12, height:12, borderRadius:3, background:v.cor }} />
-                        <strong>{k}</strong> · {v.desc}
-                      </div>
-                    ))}
-                  </div>
-                  <p style={{ marginTop:16, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>
-                    Síntese rápida gerada por IA com busca ao vivo — <strong>não substitui revisão sistemática</strong>.
-                    A IA organiza e classifica evidência; a decisão segue do gestor. Verifique sempre as fontes originais.
-                  </p>
-                </div>
+                ))}
               </div>
-            )}
-
-            <div style={{ marginTop:34, fontSize:11.5, color:"#a8a292" }}>
-              Chave configurada · <span className="ebr-btn" onClick={clearKey} style={{ textDecoration:"underline", color:"#8a8576" }}>trocar chave</span>
+              <p style={{ marginTop:16, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>
+                Síntese rápida gerada por IA com busca ao vivo — <strong>não substitui revisão sistemática</strong>.
+                A IA organiza e classifica evidência; a decisão segue do gestor. Verifique sempre as fontes originais.
+              </p>
             </div>
-          </React.Fragment>
+          </div>
         )}
       </main>
     </div>
