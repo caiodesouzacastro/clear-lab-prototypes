@@ -1,413 +1,191 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>B · What Works Brasil — CLEAR Lab Prototypes</title>
-<meta name="description" content="Município pergunta quem como ele melhorou em determinada agenda. Mockup CLEAR Lab.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/clear.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>What Works Brasil — CLEAR Lab (piloto)</title>
+<meta name="description" content="Casos de municípios que enfrentaram problemas parecidos e o que fizeram. Piloto interno CLEAR Lab." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-.ww-shell { max-width: 1320px; margin: 0 auto; padding: 40px 48px 24px; }
-@media (max-width: 768px) { .ww-shell { padding: 32px 24px 16px; } }
-
-/* Formulário de busca */
-.consulta {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  padding: 28px 32px;
-  margin-bottom: 32px;
-  display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr auto;
-  gap: 18px;
-  align-items: flex-end;
-}
-@media (max-width: 900px) { .consulta { grid-template-columns: 1fr; } }
-.consulta .label-wrap label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.16em; color:var(--clear-gray); margin-bottom:8px; font-weight:600; }
-
-/* Resultados header */
-.result-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-.result-title {
-  font-family: var(--serif);
-  font-size: 24px;
-  font-weight: 500;
-  color: var(--clear-blue);
-  letter-spacing: -0.015em;
-  line-height: 1.2;
-}
-.result-meta { font-size: 12px; color: var(--clear-gray); font-family: var(--mono); letter-spacing: 0.04em; }
-
-/* Layout principal */
-.ww-layout {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 32px;
-}
-@media (max-width: 1024px) { .ww-layout { grid-template-columns: 1fr; } }
-
-/* "Você" - card do município de origem */
-.origem-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--clear-blue);
-  padding: 22px 24px;
-  margin-bottom: 18px;
-}
-.origem-rotulo { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--clear-salmon); font-weight: 500; margin-bottom: 8px; }
-.origem-nome { font-family: var(--serif); font-size: 22px; font-weight: 500; color: var(--clear-blue); margin-bottom: 4px; letter-spacing: -0.01em; }
-.origem-uf { font-size: 13px; color: var(--clear-gray); margin-bottom: 18px; }
-.origem-attrs { display: flex; flex-direction: column; gap: 8px; }
-.origem-attr { display: grid; grid-template-columns: 1fr auto; gap: 12px; font-size: 13px; padding-bottom: 6px; border-bottom: 1px solid var(--border-soft); }
-.origem-attr:last-child { border-bottom: none; padding-bottom: 0; }
-.origem-attr span { color: var(--clear-gray); }
-.origem-attr strong { color: var(--ink); font-weight: 500; }
-
-/* Indicador foco */
-.foco-card {
-  background: var(--clear-light-blue-bg);
-  border-left: 3px solid var(--clear-light-blue);
-  padding: 18px 22px;
-}
-.foco-card .foco-rotulo { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--clear-light-blue); font-weight: 500; margin-bottom: 6px; }
-.foco-card h4 { font-family: var(--serif); font-size: 17px; color: var(--clear-blue); margin-bottom: 6px; line-height: 1.25; }
-.foco-card p { font-size: 13px; color: var(--ink); line-height: 1.5; margin-bottom: 12px; }
-.foco-valor { display: flex; align-items: baseline; gap: 10px; }
-.foco-valor-num { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--clear-blue); line-height: 1; letter-spacing: -0.02em; }
-.foco-valor-unit { font-size: 12px; color: var(--clear-gray); }
-.foco-tendencia { font-family: var(--mono); font-size: 10px; padding: 3px 8px; background: var(--clear-light-amber); color: var(--clear-amber); border-radius: 999px; letter-spacing: 0.04em; font-weight: 500; }
-
-/* Lista de pares */
-.pares-list { display: flex; flex-direction: column; gap: 12px; }
-
-.par {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  padding: 20px 24px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 18px;
-  align-items: center;
-  transition: background 0.2s ease;
-  cursor: pointer;
-}
-.par:hover { background: var(--card-hover); }
-
-.par-info { min-width: 0; }
-.par-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
-.par-nome { font-family: var(--serif); font-size: 19px; font-weight: 500; color: var(--clear-blue); letter-spacing: -0.01em; }
-.par-uf { font-family: var(--mono); font-size: 11px; color: var(--clear-gray); padding: 2px 6px; border: 1px solid var(--border); border-radius: 3px; letter-spacing: 0.04em; }
-.par-similaridade { font-family: var(--mono); font-size: 11px; padding: 3px 9px; background: var(--clear-light-green); color: var(--clear-green); border-radius: 999px; font-weight: 500; letter-spacing: 0.02em; }
-
-.par-hipotese { font-family: var(--serif); font-size: 15px; line-height: 1.5; color: var(--ink); font-style: italic; margin-top: 6px; }
-.par-hipotese::before { content: '"'; color: var(--clear-salmon); font-size: 20px; vertical-align: -2px; margin-right: 2px; }
-.par-hipotese::after { content: '"'; color: var(--clear-salmon); font-size: 20px; vertical-align: -2px; margin-left: 2px; }
-
-.par-evidencia { display: flex; gap: 16px; margin-top: 14px; font-size: 12px; color: var(--clear-gray); flex-wrap: wrap; }
-.par-evidencia span { display: inline-flex; gap: 4px; align-items: center; }
-.par-evidencia strong { color: var(--ink); font-weight: 600; }
-
-/* Trajetória — gráfico simples */
-.par-trajeto { width: 180px; height: 80px; }
-.par-trajeto svg { width: 100%; height: 100%; display: block; }
-@media (max-width: 600px) { .par-trajeto { width: 100%; } .par { grid-template-columns: 1fr; } }
-
-.delta-pill {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 999px;
-  text-align: center;
-  margin-top: 6px;
-  letter-spacing: 0.02em;
-}
-.delta-positivo { background: var(--clear-light-green); color: var(--clear-green); }
-
-/* Disclaimer epistêmico */
-.metodologia-toggle {
-  background: transparent;
-  border: 1px dashed var(--clear-light-blue);
-  color: var(--clear-light-blue);
-  font-family: inherit;
-  font-size: 13px;
-  padding: 14px 20px;
-  width: 100%;
-  cursor: pointer;
-  margin: 24px 0;
-  text-align: left;
-  border-radius: 4px;
-  transition: all 0.18s ease;
-}
-.metodologia-toggle:hover { background: var(--clear-light-blue-bg); }
-.metodologia-toggle::before { content: "▸ "; color: var(--clear-salmon); font-weight: 600; }
-.metodologia-toggle.open::before { content: "▾ "; }
-
-.metodologia-content {
-  display: none;
-  background: var(--clear-light-gray);
-  border-left: 3px solid var(--clear-blue);
-  padding: 22px 26px;
-  font-size: 13.5px;
-  line-height: 1.65;
-  color: var(--ink);
-}
-.metodologia-content.open { display: block; }
-.metodologia-content h4 { font-family: var(--serif); font-size: 15px; color: var(--clear-blue); margin: 14px 0 6px; font-weight: 500; }
-.metodologia-content h4:first-child { margin-top: 0; }
-.metodologia-content code { background: var(--card-bg); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+  :root{ color-scheme: light; }
+  html,body{ margin:0; padding:0; background:#F7F5EF; }
+  *{ box-sizing:border-box; }
+  .ebr-mono{font-family:'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+  .ebr-serif{font-family:'Fraunces',serif;}
+  .ebr-btn{transition:transform .15s ease,opacity .15s ease;cursor:pointer;}
+  .ebr-btn:hover{opacity:.92;transform:translateY(-1px);}
+  .ebr-chip{transition:border-color .15s ease,color .15s ease;cursor:pointer;}
+  .ebr-chip:hover{border-color:#08B0EE;color:#01354A;}
+  @keyframes ebrpulse{0%,100%{opacity:.35}50%{opacity:1}}
+  .ebr-dot{animation:ebrpulse 1.2s ease-in-out infinite;}
+  @keyframes ebrup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .ebr-rise{animation:ebrup .5s ease both;}
+  a{ color:#01354A; }
+  textarea{ font-family:'DM Sans',sans-serif; }
+  .ebr-fontes a:hover{ color:#01354A; text-decoration:underline; }
+  @media print {
+    .no-print{ display:none !important; }
+    html,body{ background:#fff !important; }
+    header{ padding:16px 0 !important; }
+    main{ padding:12px 0 0 !important; }
+  }
 </style>
 </head>
 <body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const WORKER_URL = "https://evidencia-br.caiodesouzacastro28.workers.dev";
+const PRODUTO = "whatworks";
 
-<div data-proto-header
-     data-letter="B"
-     data-titulo="What Works Brasil"
-     data-tag="Camada 2 · Aprendizado entre pares"
-     data-subtitle="Município pergunta quem como ele melhorou em determinada agenda, e recebe uma lista de pares estatisticamente comparáveis com hipótese explicativa cruzando PNCP, IEGM, SIOPS, SIOPE e Censo SUAS.">
-</div>
+function parseJSON(text){
+  let t = (text||"").replace(/```json|```/g, "").trim();
+  const s = t.indexOf("{"), e = t.lastIndexOf("}");
+  if (s !== -1 && e !== -1) t = t.slice(s, e+1);
+  return JSON.parse(t);
+}
+async function ask(question){
+  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ produto: PRODUTO, question }) });
+  const json = await r.json();
+  if (json.error) throw new Error(json.error.message || "Erro na API");
+  const cand = json.candidates && json.candidates[0];
+  const txt = (cand?.content?.parts || []).map(p=>p.text).filter(Boolean).join("");
+  const parsed = parseJSON(txt);
+  const chunks = cand?.groundingMetadata?.groundingChunks || [];
+  const grounded = chunks.map(c=>({ titulo:c.web?.title||c.web?.uri, url:c.web?.uri })).filter(x=>x.url);
+  if (grounded.length && (!parsed.fontes || !parsed.fontes.length)) parsed.fontes = grounded;
+  return parsed;
+}
 
-<div class="ww-shell">
+const C = { navy:"#01354A", navy2:"#012030", blue:"#08B0EE", green:"#98C43B", paper:"#F7F5EF", ink:"#1A1A1C", amber:"#E0992E", rust:"#C2572E" };
+const NIVEL = {
+  A:{cor:C.green,rotulo:"Forte",desc:"Revisões sistemáticas / múltiplos ECRs"},
+  B:{cor:C.blue,rotulo:"Moderada",desc:"Estudo controlado ou quase-experimental"},
+  C:{cor:C.amber,rotulo:"Limitada",desc:"Estudos observacionais / séries de casos"},
+  D:{cor:C.rust,rotulo:"Incipiente",desc:"Opinião de especialista / sem evidência robusta"},
+};
+const INTENS = { "Baixo":C.green, "Médio":C.amber, "Medio":C.amber, "Alto":C.rust };
+const EXEMPLOS = ["Alta evasão no ensino médio", "Filas longas na atenção primária", "Reincidência criminal juvenil", "Baixa adesão à creche em periferias"];
 
-  <!-- Consulta -->
-  <form class="consulta" onsubmit="event.preventDefault(); buscar();">
-    <div class="label-wrap">
-      <label>Seu município</label>
-      <select class="select" id="origem">
-        <option value="palmares-tocantins">Palmares do Tocantins — TO</option>
-        <option value="parnaíba">Parnaíba — PI</option>
-        <option value="iguape">Iguape — SP</option>
-        <option value="canguçu">Canguçu — RS</option>
-      </select>
+function Selo({texto, cor, escuro}){
+  return <span style={{ background:cor, color:escuro?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>{texto}</span>;
+}
+function NivelSelo({nivel}){
+  const n = NIVEL[nivel] || NIVEL.D;
+  return <span title={n.desc}><Selo texto={"Nível "+nivel+" · "+n.rotulo} cor={n.cor} escuro={nivel==="A"||nivel==="C"} /></span>;
+}
+function Fontes({fontes}){
+  if(!fontes || !fontes.length) return null;
+  return (
+    <div className="ebr-fontes" style={{ marginTop:24 }}>
+      <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:7 }}>Fontes consultadas</div>
+      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+        {fontes.map((f,i)=>(<a key={i} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize:11.5, color:"#8a8576", textDecoration:"none", lineHeight:1.45 }}>· {f.titulo} ↗</a>))}
+      </div>
     </div>
-    <div class="label-wrap">
-      <label>Agenda</label>
-      <select class="select" id="agenda">
-        <option value="primeira-infancia">Primeira infância</option>
-        <option value="seguranca-alimentar">Segurança alimentar</option>
-        <option value="saude-mental">Saúde mental</option>
-        <option value="enfrentamento-violencia">Enfrentamento à violência</option>
-      </select>
+  );
+}
+function NavyBox({rotulo, children}){
+  return (
+    <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
+      <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>{rotulo}</div>
+      <div style={{ fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.88)" }}>{children}</div>
     </div>
-    <div class="label-wrap">
-      <label>Indicador-foco</label>
-      <select class="select" id="indicador">
-        <option value="cobertura-creche">Cobertura de creche (0-3 anos)</option>
-        <option value="dpoc">Hospitalização DPOC infantil</option>
-        <option value="alfabetizacao">Alfabetização ao final do 2º ano</option>
-        <option value="cad-unico">Atualização do Cadastro Único</option>
-      </select>
-    </div>
-    <button class="btn btn-primary" type="submit" style="height: 44px;">Buscar pares</button>
-  </form>
+  );
+}
 
-  <div class="result-head">
-    <div>
-      <div class="section-anchor">Resultados</div>
-      <h2 class="result-title">5 municípios com perfil similar e trajetória positiva</h2>
-    </div>
-    <div class="result-meta">Pareamento <strong style="color:var(--ink);">propensity score</strong> · Janela 2019-2024 · 4.872 municípios candidatos</div>
-  </div>
 
-  <div class="ww-layout">
-
-    <!-- Coluna esquerda -->
-    <aside>
-      <div class="origem-card">
-        <div class="origem-rotulo">Município de referência</div>
-        <div class="origem-nome">Palmares do Tocantins</div>
-        <div class="origem-uf">TO · Norte · Microrregião de Araguaína</div>
-        <div class="origem-attrs">
-          <div class="origem-attr"><span>População</span><strong>9.247</strong></div>
-          <div class="origem-attr"><span>IDH</span><strong>0,632</strong></div>
-          <div class="origem-attr"><span>Receita líquida/hab</span><strong>R$ 4.180</strong></div>
-          <div class="origem-attr"><span>Cobertura ESF</span><strong>100%</strong></div>
-          <div class="origem-attr"><span>IEGM faixa</span><strong>C</strong></div>
+function renderResult(res){
+  return (<div>
+    <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
+    <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 28px", fontWeight:500 }}>{res.problema}</p>
+    <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:12 }}>Quem, parecido com você, enfrentou isso</div>
+    <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+      {(res.casos||[]).map((o,i)=>(
+        <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"18px 20px", borderLeft:`5px solid ${(NIVEL[o.nivel]||NIVEL.D).cor}` }}>
+          <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+            <h3 className="ebr-serif" style={{ fontSize:19, margin:0, fontWeight:600, color:C.navy }}>{o.local}</h3>
+            <NivelSelo nivel={o.nivel} />
+          </div>
+          {o.contexto && <p style={{ margin:"8px 0 0", fontSize:13, color:"#8a8576", fontStyle:"italic" }}>{o.contexto}</p>}
+          {o.oque_fez && <p style={{ margin:"11px 0 0", fontSize:15, lineHeight:1.55 }}><strong style={{ color:C.navy }}>Fez · </strong>{o.oque_fez}</p>}
+          {o.resultado && <p style={{ margin:"8px 0 0", fontSize:15, lineHeight:1.55 }}><strong style={{ color:C.navy }}>Resultado · </strong>{o.resultado}</p>}
+          {o.transferibilidade && <div style={{ marginTop:12, padding:"9px 12px", background:C.paper, borderRadius:8, fontSize:13, color:"#5a5648" }}><strong style={{ color:C.navy }}>Para o seu caso · </strong>{o.transferibilidade}</div>}
         </div>
-      </div>
-
-      <div class="foco-card">
-        <div class="foco-rotulo">Indicador-foco</div>
-        <h4>Cobertura de creche, 0-3 anos</h4>
-        <p>Proporção de crianças até 3 anos matriculadas em creche pública municipal.</p>
-        <div class="foco-valor">
-          <span class="foco-valor-num">14,2%</span>
-          <span class="foco-valor-unit">2024 · estável desde 2019</span>
-        </div>
-        <div style="margin-top:10px;">
-          <span class="foco-tendencia">↗ +1,2pp em 5 anos</span>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Coluna direita: pares -->
-    <div>
-      <div class="pares-list" id="pares-list">
-        <!-- pares renderizados via JS -->
-      </div>
-
-      <button class="metodologia-toggle" onclick="toggleMethod(this)">Como o pareamento foi feito e quais os limites</button>
-      <div class="metodologia-content">
-        <h4>Pareamento</h4>
-        <p>Propensity score matching usando 9 covariáveis pré-2019: porte populacional, IDH, receita líquida per capita, dependência do FPM, cobertura ESF, taxa de pobreza, escolaridade média, distância da capital, faixa IEGM. Os 5 pares têm distância de Mahalanobis < 0,15 em relação ao município de origem.</p>
-
-        <h4>Mensuração da melhoria</h4>
-        <p>Variação do indicador-foco entre 2019 e 2024, controlada pelo trend nacional do mesmo indicador. Considera-se "trajetória positiva" um delta acima do percentil 80 do grupo de comparáveis.</p>
-
-        <h4>Hipótese explicativa</h4>
-        <p>A frase em itálico em cada par <em>não é uma conclusão causal</em>. É hipótese gerada por LLM lendo PPA, contratos PNCP da agenda, atas de conselho municipal e relatórios do TCE. Cada hipótese tem rastreabilidade até os documentos consultados (botão "ver fontes" — não funcional no mockup).</p>
-
-        <h4>O que esta ferramenta <em>não</em> diz</h4>
-        <ul style="margin:8px 0 0 20px;">
-          <li>Não diz que copiar o município par produzirá o mesmo resultado.</li>
-          <li>Não estabelece causalidade — apenas correlação contextualizada.</li>
-          <li>Não captura iniciativas que ainda não passaram por contratação formal.</li>
-          <li>Não considera fatores políticos não documentados (gestão, coalizão, capacidade técnica do gestor).</li>
-        </ul>
-
-        <h4>Próximos passos sugeridos ao gestor</h4>
-        <ul style="margin:8px 0 0 20px;">
-          <li>Inspecionar os contratos PNCP dos pares na sua agenda de interesse.</li>
-          <li>Contato direto com a secretaria do par — esta ferramenta deveria, em produção, facilitar isso.</li>
-          <li>Síntese de evidência sobre o instrumento adotado pelo par (use o protótipo A).</li>
-        </ul>
-      </div>
+      ))}
     </div>
-  </div>
-</div>
+    {res.consideracoes && <NavyBox rotulo="Como interpretar">{res.consideracoes}</NavyBox>}
+    <Fontes fontes={res.fontes} />
+    <p style={{ marginTop:24, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>Casos análogos encontrados por IA — <strong>semelhança é aproximada e correlação não é causa</strong>. Use como inspiração, não como prova de que funcionaria igual.</p>
+  </div>);
+}
 
-<div data-proto-footer></div>
 
-<script src="../assets/clear.js"></script>
-<script src="../assets/proto-chrome.js"></script>
-<script>
-const PARES = [
-  {
-    nome: "Sítio do Mato",
-    uf: "BA",
-    similaridade: 0.94,
-    delta: "+8,3pp",
-    hipotese: "Convênio com instituição confessional para operar 2 creches comunitárias com cofinanciamento municipal — capacidade dobrou sem construção de obra.",
-    evidencia: [
-      ["Contratos PNCP", "11 contratos saúde/educação infantil"],
-      ["Convênios", "3 com Pastoral da Criança"],
-      ["Investimento", "R$ 920k/ano em alimentação infantil"]
-    ],
-    trajetoria: [12.1, 13.8, 15.6, 17.2, 19.1, 20.4]
-  },
-  {
-    nome: "Castanheiras",
-    uf: "RO",
-    similaridade: 0.91,
-    delta: "+6,5pp",
-    hipotese: "Programa estadual de cofinanciamento Brasil Carinhoso ampliou vagas. Município entrou cedo no edital e aproveitou janela de implementação.",
-    evidencia: [
-      ["Recursos federais", "R$ 1,1M Brasil Carinhoso 2021"],
-      ["Contratos PNCP", "obra de creche 2021-22"],
-      ["Conselho municipal", "atas de pactuação 2021"]
-    ],
-    trajetoria: [13.4, 13.9, 14.7, 17.0, 18.8, 19.9]
-  },
-  {
-    nome: "Bonópolis",
-    uf: "GO",
-    similaridade: 0.88,
-    delta: "+5,8pp",
-    hipotese: "Reorganização de turmas em CMEI existentes (sem expansão física) liberou vagas. Decisão pedagógica e administrativa, custo marginal próximo de zero.",
-    evidencia: [
-      ["PPA 2022-25", "meta de 'otimização do espaço educativo'"],
-      ["Contratos PNCP", "ampliação não detectada"],
-      ["FNDE Censo Escolar", "razão criança/sala +14%"]
-    ],
-    trajetoria: [14.0, 14.2, 15.3, 17.1, 19.0, 19.8]
-  },
-  {
-    nome: "Pequeri",
-    uf: "MG",
-    similaridade: 0.85,
-    delta: "+5,1pp",
-    hipotese: "Cofinanciamento municipal de creche conveniada com associação rural — modelo controverso mas com aceitação local. Atenção: pode mascarar precarização.",
-    evidencia: [
-      ["Convênio", "1 com ASSORURAL"],
-      ["TCE/MG", "relatório de fiscalização 2022"],
-      ["Câmara municipal", "Lei 412/2021 de fomento"]
-    ],
-    trajetoria: [13.8, 14.5, 14.9, 16.7, 18.2, 18.9]
-  },
-  {
-    nome: "Quintana",
-    uf: "SP",
-    similaridade: 0.83,
-    delta: "+4,9pp",
-    hipotese: "Demanda reprimida absorvida por extensão do horário em pré-escola existente para 0-3 (mudança de oferta etária). Decisão única do gestor com forte apoio do conselho.",
-    evidencia: [
-      ["Decreto municipal", "001/2022 extensão etária"],
-      ["Contratos PNCP", "8 contratos alimentação"],
-      ["IDEB pré", "estável após mudança"]
-    ],
-    trajetoria: [14.2, 14.6, 15.0, 16.4, 18.1, 19.1]
+function App(){
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [res, setRes] = useState(null);
+  const [err, setErr] = useState(null);
+  async function run(p){
+    const texto = (p ?? q).trim();
+    if(!texto || loading) return;
+    setQ(texto); setLoading(true); setErr(null); setRes(null);
+    try{ setRes(await ask(texto)); }
+    catch(e){ setErr("Não consegui processar. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
+    finally{ setLoading(false); }
   }
-];
-
-function sparkline(serie) {
-  const min = Math.min(...serie) - 1;
-  const max = Math.max(...serie) + 1;
-  const w = 180, h = 80;
-  const stepX = w / (serie.length - 1);
-  const pts = serie.map((v, i) => [i * stepX, h - ((v - min) / (max - min)) * h]);
-  const path = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
-  const area = path + ` L${w} ${h} L0 ${h} Z`;
-  const last = pts[pts.length - 1];
-  return `
-    <svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="${area}" fill="var(--clear-light-blue)" opacity="0.15"/>
-      <path d="${path}" fill="none" stroke="var(--clear-light-blue)" stroke-width="1.8" stroke-linejoin="round"/>
-      <circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="var(--clear-salmon)"/>
-    </svg>
-  `;
-}
-
-function renderPares() {
-  const list = document.getElementById('pares-list');
-  list.innerHTML = PARES.map(p => `
-    <div class="par">
-      <div class="par-info">
-        <div class="par-head">
-          <span class="par-nome">${p.nome}</span>
-          <span class="par-uf">${p.uf}</span>
-          <span class="par-similaridade">similaridade ${(p.similaridade * 100).toFixed(0)}%</span>
+  return (
+    <div style={{ fontFamily:"'DM Sans',sans-serif", color:C.ink, background:C.paper, minHeight:"100vh" }}>
+      <header style={{ background:C.navy, color:"#fff", padding:"30px 28px 34px", position:"relative", overflow:"hidden" }}>
+        <div className="no-print" style={{ position:"absolute", top:-120, right:-80, width:320, height:320, borderRadius:"50%", background:C.blue, opacity:.08 }} />
+        <div className="no-print" style={{ position:"absolute", bottom:-140, left:-60, width:260, height:260, borderRadius:"50%", background:C.green, opacity:.07 }} />
+        <div style={{ maxWidth:920, margin:"0 auto", position:"relative" }}>
+          <a href="../" className="no-print ebr-mono" style={{ fontSize:10, color:C.blue, textDecoration:"none", display:"inline-block", marginBottom:12 }}>← Portal dos protótipos</a>
+          <div className="ebr-mono" style={{ fontSize:11, color:C.blue, marginBottom:14 }}>CLEAR Lab · Protótipo B · Camada 02 — Sintetizar · PILOTO</div>
+          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>What Works <span style={{ fontStyle:"italic", color:C.blue }}>Brasil</span></h1>
+          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>Descreva seu problema. O sistema busca municípios que enfrentaram algo parecido e o que eles fizeram. Casos análogos para inspiração — não pareamento estatístico.</p>
         </div>
-        <div class="par-hipotese">${p.hipotese}</div>
-        <div class="par-evidencia">
-          ${p.evidencia.map(e => `<span><strong>${e[0]}:</strong> ${e[1]}</span>`).join('')}
+      </header>
+      <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
+        
+        <div className="no-print" style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
+          <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Seu problema de política</label>
+          <textarea value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
+            placeholder="Ex.: nossa rede municipal tem alta evasão no ensino médio" rows={3}
+            style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
+            <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
+            <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
+              style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
+              {loading ? "Processando…" : "Buscar casos"}
+            </button>
+          </div>
         </div>
-      </div>
-      <div>
-        <div class="par-trajeto">${sparkline(p.trajetoria)}</div>
-        <div class="delta-pill delta-positivo">${p.delta} em 5 anos</div>
-      </div>
+        {!res && !loading && (
+          <div className="no-print" style={{ marginTop:16 }}>
+            <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {EXEMPLOS.map(ex=>(<button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>{ex}</button>))}
+            </div>
+          </div>
+        )}
+        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Buscando casos análogos…</span></div>)}
+        {err && (<div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>{err}</div>)}
+        {res && (<div className="ebr-rise" style={{ marginTop:26 }}>
+          <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
+            <button className="ebr-btn" onClick={()=>window.print()} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 14px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>Imprimir / PDF</button>
+          </div>
+          {renderResult(res)}
+        </div>)}
+      </main>
     </div>
-  `).join('');
+  );
 }
-
-function buscar() {
-  // No mockup, sempre renderiza os mesmos pares.
-}
-
-function toggleMethod(btn) {
-  btn.classList.toggle('open');
-  btn.nextElementSibling.classList.toggle('open');
-}
-
-renderPares();
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
