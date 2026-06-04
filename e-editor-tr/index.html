@@ -1,439 +1,202 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>E · Editor de TR assistido por evidência — CLEAR Lab Prototypes</title>
-<meta name="description" content="Editor de termo de referência com sugestões alinhadas à evidência e flags jurídicos. Mockup CLEAR Lab.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/clear.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Editor de TR — CLEAR Lab (piloto)</title>
+<meta name="description" content="Rascunho estruturado de termo de referência a partir do objeto. Piloto interno CLEAR Lab." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-.tr-shell { max-width: 1380px; margin: 0 auto; padding: 32px 48px 24px; }
-@media (max-width: 768px) { .tr-shell { padding: 24px 24px 16px; } }
-
-/* Toolbar — classificação automática + status */
-.tr-toolbar {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 18px;
-  padding: 18px 24px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  margin-bottom: 18px;
-  align-items: center;
-}
-@media (max-width: 768px) { .tr-toolbar { grid-template-columns: 1fr; } }
-.classif-block { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.classif-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--clear-gray); font-weight: 500; }
-
-/* Layout principal: editor + painel */
-.tr-layout {
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 18px;
-}
-@media (max-width: 1100px) { .tr-layout { grid-template-columns: 1fr; } }
-
-/* Editor */
-.editor-wrap {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  min-height: 720px;
-  display: flex;
-  flex-direction: column;
-}
-.editor-head {
-  padding: 18px 28px;
-  border-bottom: 1px solid var(--border-soft);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.editor-tit {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--clear-gray);
-}
-.editor-actions { display: flex; gap: 8px; }
-
-.editor-body {
-  flex: 1;
-  padding: 32px 36px 40px;
-  font-family: 'Times New Roman', serif;
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--ink);
-  overflow-y: auto;
-}
-.editor-body h2 {
-  font-family: 'Times New Roman', serif;
-  font-size: 17px;
-  font-weight: 700;
-  margin: 22px 0 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  border-bottom: 1px solid var(--border-soft);
-  padding-bottom: 4px;
-}
-.editor-body h2:first-child { margin-top: 0; }
-.editor-body h3 {
-  font-family: 'Times New Roman', serif;
-  font-size: 15px;
-  font-weight: 700;
-  margin: 16px 0 8px;
-}
-.editor-body p { margin-bottom: 10px; text-align: justify; }
-.editor-body ul, .editor-body ol { margin: 8px 0 14px 28px; }
-.editor-body li { margin-bottom: 4px; }
-
-/* Marcações no editor */
-.mark {
-  background: var(--clear-light-amber);
-  padding: 1px 3px;
-  border-radius: 2px;
-  cursor: pointer;
-  position: relative;
-}
-.mark-evid { background: var(--clear-light-blue-bg); border-bottom: 2px dotted var(--clear-light-blue); }
-.mark-legal { background: var(--clear-light-salmon); border-bottom: 2px dotted var(--clear-salmon); }
-.mark-good { background: var(--clear-light-green); border-bottom: 2px dotted var(--clear-green); }
-.mark .mark-tag {
-  position: absolute;
-  top: -8px;
-  right: -4px;
-  font-family: var(--mono);
-  font-size: 8px;
-  background: var(--clear-salmon);
-  color: white;
-  padding: 1px 4px;
-  border-radius: 2px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-.mark-evid .mark-tag { background: var(--clear-light-blue); }
-.mark-legal .mark-tag { background: var(--clear-salmon); }
-.mark-good .mark-tag { background: var(--clear-green); }
-
-/* Painel lateral */
-.side-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.panel-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  padding: 0;
-  overflow: hidden;
-}
-.panel-head {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border-soft);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--clear-gray);
-  font-weight: 500;
-}
-.panel-head .dot { width: 10px; height: 10px; border-radius: 50%; }
-.dot-evid { background: var(--clear-light-blue); }
-.dot-legal { background: var(--clear-salmon); }
-.dot-good { background: var(--clear-green); }
-.panel-head strong { color: var(--ink); }
-
-.panel-body { padding: 16px 20px; font-size: 13px; line-height: 1.55; color: var(--ink); }
-.panel-body p { margin-bottom: 8px; }
-.panel-body p:last-child { margin-bottom: 0; }
-.panel-body strong { color: var(--clear-blue); font-weight: 600; }
-.panel-body em { font-style: italic; color: var(--clear-gray); }
-
-.panel-source {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--clear-gray);
-  padding-top: 10px;
-  margin-top: 10px;
-  border-top: 1px dashed var(--border);
-}
-.panel-source strong { color: var(--ink); }
-
-.panel-action {
-  background: var(--clear-light-blue-bg);
-  border: none;
-  border-top: 1px solid var(--border-soft);
-  padding: 10px 20px;
-  width: 100%;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--clear-light-blue);
-  cursor: pointer;
-  text-align: left;
-  letter-spacing: 0.04em;
-}
-.panel-action:hover { background: var(--clear-light-blue); color: white; }
-
-/* Legenda */
-.legenda {
-  display: flex;
-  gap: 16px;
-  font-size: 11px;
-  color: var(--clear-gray);
-  flex-wrap: wrap;
-  align-items: center;
-  font-family: var(--mono);
-  letter-spacing: 0.04em;
-}
-.legenda-item { display: flex; gap: 6px; align-items: center; }
-.legenda-item .dot { width: 9px; height: 9px; border-radius: 2px; }
-
-/* Botão de switch */
-.switcher {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.switcher button {
-  font-family: inherit;
-  font-size: 12px;
-  padding: 6px 12px;
-  background: transparent;
-  border: none;
-  color: var(--clear-gray);
-  cursor: pointer;
-  font-weight: 500;
-}
-.switcher button.active { background: var(--clear-blue); color: white; }
-
-/* Modal de cláusula */
-.modal-overlay { position: fixed; inset: 0; background: rgba(28,28,30,0.5); backdrop-filter: blur(4px); z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
-.modal-overlay.open { opacity: 1; pointer-events: auto; }
-.clausula-modal {
-  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: min(720px, calc(100vw - 32px)); max-height: 84vh; overflow-y: auto;
-  background: var(--paper); z-index: 101; padding: 32px 36px;
-  box-shadow: var(--shadow-modal);
-  display: none;
-}
-.clausula-modal.open { display: block; }
-.clausula-modal h3 { font-family: var(--serif); font-size: 22px; color: var(--clear-blue); margin-bottom: 6px; }
-.clausula-modal .clausula-fonte { font-size: 12px; color: var(--clear-gray); margin-bottom: 18px; font-family: var(--mono); }
-.clausula-modal pre {
-  background: var(--clear-light-gray);
-  border-left: 3px solid var(--clear-light-blue);
-  padding: 16px 20px;
-  font-family: 'Times New Roman', serif;
-  font-size: 14px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-.clausula-close { position: absolute; top: 14px; right: 18px; background: transparent; border: none; cursor: pointer; font-size: 22px; color: var(--clear-gray); }
+  :root{ color-scheme: light; }
+  html,body{ margin:0; padding:0; background:#F7F5EF; }
+  *{ box-sizing:border-box; }
+  .ebr-mono{font-family:'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+  .ebr-serif{font-family:'Fraunces',serif;}
+  .ebr-btn{transition:transform .15s ease,opacity .15s ease;cursor:pointer;}
+  .ebr-btn:hover{opacity:.92;transform:translateY(-1px);}
+  .ebr-chip{transition:border-color .15s ease,color .15s ease;cursor:pointer;}
+  .ebr-chip:hover{border-color:#08B0EE;color:#01354A;}
+  @keyframes ebrpulse{0%,100%{opacity:.35}50%{opacity:1}}
+  .ebr-dot{animation:ebrpulse 1.2s ease-in-out infinite;}
+  @keyframes ebrup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .ebr-rise{animation:ebrup .5s ease both;}
+  a{ color:#01354A; }
+  textarea{ font-family:'DM Sans',sans-serif; }
+  .ebr-fontes a:hover{ color:#01354A; text-decoration:underline; }
+  @media print {
+    .no-print{ display:none !important; }
+    html,body{ background:#fff !important; }
+    header{ padding:16px 0 !important; }
+    main{ padding:12px 0 0 !important; }
+  }
 </style>
 </head>
 <body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const WORKER_URL = "https://evidencia-br.caiodesouzacastro28.workers.dev";
+const PRODUTO = "editortr";
 
-<div data-proto-header
-     data-letter="E"
-     data-titulo="Editor de TR assistido por evidência"
-     data-tag="Camada 4 · Construir"
-     data-subtitle="Editor de termo de referência que classifica o objeto, sugere especificações alinhadas com o que funciona, puxa cláusulas de TRs bem avaliados e flagga risco jurídico. IA no ponto exato em que a política pode ainda mudar.">
-</div>
+function parseJSON(text){
+  let t = (text||"").replace(/```json|```/g, "").trim();
+  const s = t.indexOf("{"), e = t.lastIndexOf("}");
+  if (s !== -1 && e !== -1) t = t.slice(s, e+1);
+  return JSON.parse(t);
+}
+async function ask(question){
+  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ produto: PRODUTO, question }) });
+  const json = await r.json();
+  if (json.error) throw new Error(json.error.message || "Erro na API");
+  const cand = json.candidates && json.candidates[0];
+  const txt = (cand?.content?.parts || []).map(p=>p.text).filter(Boolean).join("");
+  const parsed = parseJSON(txt);
+  const chunks = cand?.groundingMetadata?.groundingChunks || [];
+  const grounded = chunks.map(c=>({ titulo:c.web?.title||c.web?.uri, url:c.web?.uri })).filter(x=>x.url);
+  if (grounded.length && (!parsed.fontes || !parsed.fontes.length)) parsed.fontes = grounded;
+  return parsed;
+}
 
-<div class="tr-shell">
+const C = { navy:"#01354A", navy2:"#012030", blue:"#08B0EE", green:"#98C43B", paper:"#F7F5EF", ink:"#1A1A1C", amber:"#E0992E", rust:"#C2572E" };
+const NIVEL = {
+  A:{cor:C.green,rotulo:"Forte",desc:"Revisões sistemáticas / múltiplos ECRs"},
+  B:{cor:C.blue,rotulo:"Moderada",desc:"Estudo controlado ou quase-experimental"},
+  C:{cor:C.amber,rotulo:"Limitada",desc:"Estudos observacionais / séries de casos"},
+  D:{cor:C.rust,rotulo:"Incipiente",desc:"Opinião de especialista / sem evidência robusta"},
+};
+const INTENS = { "Baixo":C.green, "Médio":C.amber, "Medio":C.amber, "Alto":C.rust };
+const EXEMPLOS = ["Fornecimento de merenda escolar", "Serviço de transporte escolar rural", "Aquisição de equipamentos de informática", "Contratação de serviço de limpeza urbana"];
 
-  <!-- Toolbar -->
-  <div class="tr-toolbar">
-    <div class="classif-block">
-      <span class="classif-label">Classificação automática</span>
-      <span class="chip">Primeira Infância</span>
-      <span class="chip chip-salmon">Segurança Alimentar</span>
-      <span class="chip chip-gray">Confiança 87%</span>
-    </div>
-    <div class="legenda">
-      <span class="legenda-item"><span class="dot" style="background:var(--clear-light-blue);"></span>evidência</span>
-      <span class="legenda-item"><span class="dot" style="background:var(--clear-salmon);"></span>risco jurídico</span>
-      <span class="legenda-item"><span class="dot" style="background:var(--clear-green);"></span>boa prática</span>
-    </div>
-    <div class="switcher">
-      <button class="active">Editar</button>
-      <button>Revisar</button>
-      <button>Exportar</button>
-    </div>
-  </div>
-
-  <div class="tr-layout">
-
-    <!-- Editor -->
-    <div class="editor-wrap">
-      <div class="editor-head">
-        <span class="editor-tit">TR · Contratação de alimentação escolar — Modalidade Pregão Eletrônico</span>
-        <div class="editor-actions">
-          <button class="btn btn-ghost">Salvar</button>
-          <button class="btn btn-primary">Validar TR</button>
-        </div>
-      </div>
-      <div class="editor-body">
-
-        <h2>1. Do Objeto</h2>
-        <p>Contratação de empresa especializada para o fornecimento de gêneros alimentícios destinados à <span class="mark mark-good" data-panel="objeto">merenda escolar das unidades de ensino da Rede Municipal de Educação<span class="mark-tag">1</span></span>, conforme cardápio elaborado por nutricionista responsável e em conformidade com a Lei 11.947/2009.</p>
-
-        <h2>2. Da Justificativa</h2>
-        <p>A presente contratação visa garantir o atendimento da alimentação escolar para aproximadamente 12.400 alunos matriculados na rede municipal, atendendo ao disposto na Lei 11.947/2009, na <span class="mark mark-legal" data-panel="rdc">Resolução RDC 26/2013<span class="mark-tag">2</span></span> e na Resolução CD/FNDE 06/2020.</p>
-
-        <h2>3. Das Especificações Técnicas</h2>
-
-        <h3>3.1. Cardápio</h3>
-        <p>O cardápio será elaborado pela nutricionista responsável técnica da Secretaria, observando-se a sazonalidade dos produtos e a <span class="mark mark-evid" data-panel="agricultura-familiar">aquisição de no mínimo 30% (trinta por cento) dos gêneros junto à agricultura familiar local<span class="mark-tag">3</span></span>, nos termos da Lei 11.947/2009.</p>
-
-        <h3>3.2. Padrão dos Produtos</h3>
-        <p>Os produtos deverão atender aos padrões mínimos estabelecidos pela ANVISA e pelo Ministério da Agricultura, com validade não inferior a 60 (sessenta) dias quando da entrega.</p>
-
-        <p>Atenção especial ao <span class="mark mark-evid" data-panel="ultraprocessados">limite máximo de produtos ultraprocessados no cardápio infantil<span class="mark-tag">4</span></span>, conforme Guia Alimentar para a População Brasileira.</p>
-
-        <h2>4. Dos Critérios de Aceitação</h2>
-        <p>A entrega será realizada nas unidades escolares conforme cronograma. <span class="mark mark-legal" data-panel="recusa">Em caso de recusa por desconformidade com as especificações, o fornecedor será notificado<span class="mark-tag">5</span></span> e deverá substituir o produto em até 24h.</p>
-
-        <h2>5. Do Valor Estimado</h2>
-        <p>O valor estimado total da contratação é de R$ 2.380.000,00, conforme planilha de composição de custos anexa.</p>
-
-        <h2>6. Da Qualificação Técnica</h2>
-        <p>A licitante deverá apresentar:</p>
-        <ul>
-          <li>Alvará sanitário do estabelecimento.</li>
-          <li>Atestado de capacidade técnica de fornecimento similar.</li>
-          <li><span class="mark mark-legal" data-panel="acessibilidade">Licença de operação dos veículos de transporte de alimentos<span class="mark-tag">6</span></span>.</li>
-        </ul>
-
-        <h2>7. Da Vigência</h2>
-        <p>O contrato terá vigência de 12 meses, podendo ser prorrogado nos termos do art. 107 da Lei 14.133/2021.</p>
-
-        <p style="color:var(--clear-gray);font-style:italic;margin-top:30px;text-align:center;font-size:13px;">— continua —</p>
-
+function Selo({texto, cor, escuro}){
+  return <span style={{ background:cor, color:escuro?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>{texto}</span>;
+}
+function NivelSelo({nivel}){
+  const n = NIVEL[nivel] || NIVEL.D;
+  return <span title={n.desc}><Selo texto={"Nível "+nivel+" · "+n.rotulo} cor={n.cor} escuro={nivel==="A"||nivel==="C"} /></span>;
+}
+function Fontes({fontes}){
+  if(!fontes || !fontes.length) return null;
+  return (
+    <div className="ebr-fontes" style={{ marginTop:24 }}>
+      <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:7 }}>Fontes consultadas</div>
+      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+        {fontes.map((f,i)=>(<a key={i} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize:11.5, color:"#8a8576", textDecoration:"none", lineHeight:1.45 }}>· {f.titulo} ↗</a>))}
       </div>
     </div>
+  );
+}
+function NavyBox({rotulo, children}){
+  return (
+    <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
+      <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>{rotulo}</div>
+      <div style={{ fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.88)" }}>{children}</div>
+    </div>
+  );
+}
 
-    <!-- Painel lateral -->
-    <aside class="side-panel" id="side-panel">
 
-      <div class="panel-card" data-key="objeto">
-        <div class="panel-head"><span class="dot dot-good"></span><strong>1. Boa prática</strong> · objeto bem delimitado</div>
-        <div class="panel-body">
-          <p>O objeto está delimitado por modalidade (alimentação escolar) e rede (municipal). Boa prática — TRs com objeto genérico ("aquisição de gêneros alimentícios") têm taxa de impugnação 3x maior pelo controle externo.</p>
-          <div class="panel-source"><strong>Referência:</strong> TCE-MG, Manual de Controle de Compras Públicas 2023.</div>
+function realcar(txt){
+  const partes = String(txt||"").split(/(\[PREENCHER:[^\]]*\])/g);
+  return partes.map((p,i)=> /^\[PREENCHER:/.test(p)
+    ? <mark key={i} style={{ background:"#fff3d6", color:C.rust, padding:"1px 5px", borderRadius:4, fontWeight:600 }}>{p}</mark>
+    : <span key={i}>{p}</span>);
+}
+const GRAV = { "Alto":C.rust, "Médio":C.amber, "Medio":C.amber, "Baixo":C.green };
+function renderResult(res){
+  return (<div>
+    <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>Objeto da contratação</div>
+    <p className="ebr-serif" style={{ fontSize:21, lineHeight:1.35, margin:"0 0 26px", fontWeight:500 }}>{res.objeto}</p>
+    <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+      {(res.secoes||[]).map((s,i)=>(
+        <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"16px 20px" }}>
+          <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, marginBottom:8 }}>{s.titulo}</div>
+          <div style={{ fontSize:14.5, lineHeight:1.6, whiteSpace:"pre-wrap" }}>{realcar(s.conteudo)}</div>
+        </div>
+      ))}
+    </div>
+    {res.riscos && res.riscos.length>0 && (
+      <div style={{ marginTop:22 }}>
+        <div className="ebr-mono" style={{ fontSize:10.5, color:C.rust, marginBottom:10 }}>Pontos de risco</div>
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {res.riscos.map((r,i)=>(
+            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10, background:"#fff", border:"1px solid #e4ded2", borderRadius:10, padding:"11px 14px" }}>
+              <span style={{ marginTop:1 }}><Selo texto={r.gravidade} cor={GRAV[r.gravidade]||C.amber} escuro={true} /></span>
+              <span style={{ fontSize:14, lineHeight:1.5 }}>{r.alerta}</span>
+            </div>
+          ))}
         </div>
       </div>
+    )}
+    <p style={{ marginTop:24, fontSize:12, color:C.rust, lineHeight:1.55, fontWeight:600 }}>{res.aviso || "Rascunho gerado por IA. Exige revisão técnica e jurídica antes de qualquer uso."}</p>
+  </div>);
+}
 
-      <div class="panel-card" data-key="rdc">
-        <div class="panel-head"><span class="dot dot-legal"></span><strong>2. Risco jurídico baixo</strong></div>
-        <div class="panel-body">
-          <p>A RDC 26/2013 (ANVISA) trata de <em>alergênicos</em>, não de padrão geral de alimentos. Para padrão geral, a referência correta é a <strong>RDC 49/2013</strong> (Boas Práticas de Fabricação) e a <strong>RDC 14/2014</strong>.</p>
-          <p>Sugestão: substituir a referência ou adicionar as três normas.</p>
-          <div class="panel-source"><strong>Base:</strong> Compêndio de Resoluções ANVISA-Alimentos.</div>
+
+function App(){
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [res, setRes] = useState(null);
+  const [err, setErr] = useState(null);
+  async function run(p){
+    const texto = (p ?? q).trim();
+    if(!texto || loading) return;
+    setQ(texto); setLoading(true); setErr(null); setRes(null);
+    try{ setRes(await ask(texto)); }
+    catch(e){ setErr("Não consegui processar. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
+    finally{ setLoading(false); }
+  }
+  return (
+    <div style={{ fontFamily:"'DM Sans',sans-serif", color:C.ink, background:C.paper, minHeight:"100vh" }}>
+      <header style={{ background:C.navy, color:"#fff", padding:"30px 28px 34px", position:"relative", overflow:"hidden" }}>
+        <div className="no-print" style={{ position:"absolute", top:-120, right:-80, width:320, height:320, borderRadius:"50%", background:C.blue, opacity:.08 }} />
+        <div className="no-print" style={{ position:"absolute", bottom:-140, left:-60, width:260, height:260, borderRadius:"50%", background:C.green, opacity:.07 }} />
+        <div style={{ maxWidth:920, margin:"0 auto", position:"relative" }}>
+          <a href="../" className="no-print ebr-mono" style={{ fontSize:10, color:C.blue, textDecoration:"none", display:"inline-block", marginBottom:12 }}>← Portal dos protótipos</a>
+          <div className="ebr-mono" style={{ fontSize:11, color:C.blue, marginBottom:14 }}>CLEAR Lab · Protótipo E · Camada 04 — Construir · PILOTO</div>
+          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>Editor de <span style={{ fontStyle:"italic", color:C.blue }}>TR</span></h1>
+          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>Descreva o objeto da contratação. O sistema monta um rascunho estruturado de termo de referência, com marcações do que falta e alertas de risco.</p>
         </div>
-        <button class="panel-action">Aplicar correção sugerida →</button>
-      </div>
-
-      <div class="panel-card" data-key="agricultura-familiar">
-        <div class="panel-head"><span class="dot dot-evid"></span><strong>3. Evidência</strong> · Lei 11.947 + boa prática</div>
-        <div class="panel-body">
-          <p>Especificar o piso é necessário, mas <strong>incluir mecanismo operacional</strong> aumenta cumprimento. TRs que descrevem (a) calendário de chamada pública e (b) agrupamento por sazonalidade têm cumprimento médio 12pp maior.</p>
-          <p>Sugestão: adicionar cláusula descrevendo cronograma anual de chamada pública.</p>
-          <div class="panel-source"><strong>Fonte:</strong> CECANE Sul, 2023 · estudo de 412 municípios.</div>
+      </header>
+      <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
+        <div style={{ background:"#9c3a1c", color:"#fff", borderRadius:12, padding:"12px 16px", marginBottom:16, fontSize:13.5, lineHeight:1.5 }}><strong>Rascunho gerado por IA</strong> — não é documento final nem parecer jurídico. <strong>Revisão técnica e jurídica é obrigatória</strong> antes de qualquer uso.</div>
+        <div className="no-print" style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
+          <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Objeto da contratação</label>
+          <textarea value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
+            placeholder="Ex.: contratação de empresa para fornecimento de merenda escolar" rows={3}
+            style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
+            <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
+            <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
+              style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
+              {loading ? "Processando…" : "Gerar rascunho"}
+            </button>
+          </div>
         </div>
-        <button class="panel-action">Inserir cláusula sugerida →</button>
-      </div>
-
-      <div class="panel-card" data-key="ultraprocessados">
-        <div class="panel-head"><span class="dot dot-evid"></span><strong>4. Evidência</strong> · Guia Alimentar</div>
-        <div class="panel-body">
-          <p>O TR menciona o Guia Alimentar mas <strong>não fixa limite mensurável</strong>. A Resolução CD/FNDE 06/2020 sugere limite de até 20% de calorias semanais de ultraprocessados. Sem essa especificação numérica, o critério não é fiscalizável.</p>
-          <p>Sugestão: parametrizar — "limite máximo de 20% das calorias semanais em alimentos classificados como ultraprocessados pela NOVA".</p>
-          <div class="panel-source"><strong>Fontes:</strong> CD/FNDE 06/2020 art. 14; Monteiro et al., 2019.</div>
-        </div>
-        <button class="panel-action">Ver TRs de pares que adotaram limite numérico →</button>
-      </div>
-
-      <div class="panel-card" data-key="recusa">
-        <div class="panel-head"><span class="dot dot-legal"></span><strong>5. Risco jurídico médio</strong></div>
-        <div class="panel-body">
-          <p>Substituição em 24h é prazo agressivo. Em municípios com fornecedor regional único, prazo abaixo de 48-72h gera judicialização. A jurisprudência do TCU aceita 48h como razoável.</p>
-          <p>Atenção: se manter 24h, deve haver previsão de fornecedor reserva no edital.</p>
-          <div class="panel-source"><strong>Base:</strong> TCU Acórdão 1.235/2021-Plenário.</div>
-        </div>
-      </div>
-
-      <div class="panel-card" data-key="acessibilidade">
-        <div class="panel-head"><span class="dot dot-legal"></span><strong>6. Lacuna na qualificação</strong></div>
-        <div class="panel-body">
-          <p>A qualificação técnica não menciona <strong>responsável técnico nutricionista</strong> do fornecedor (exigido para fornecimento de gêneros que serão preparados). Lacuna comum, e classificada como falha grave em auditoria.</p>
-          <p>Sugestão: adicionar item "CRN do responsável técnico" ou indicar que a responsabilidade é da nutricionista da Secretaria.</p>
-          <div class="panel-source"><strong>Base:</strong> CFN Resolução 600/2018.</div>
-        </div>
-        <button class="panel-action">Inserir item sugerido →</button>
-      </div>
-
-      <div class="panel-card">
-        <div class="panel-head"><span class="dot" style="background:var(--clear-gray);"></span><strong>Resumo do TR</strong></div>
-        <div class="panel-body">
-          <p><strong>Risco geral:</strong> baixo a médio.</p>
-          <p>2 sugestões de evidência (agricultura familiar, ultraprocessados), 3 alertas jurídicos (RDC, prazo de substituição, qualificação técnica). 1 boa prática reconhecida (objeto delimitado).</p>
-          <p style="font-style:italic;margin-top:8px;">Antes de publicar: validar com a procuradoria municipal os pontos 2 e 6, e verificar se há nutricionista RT contratada.</p>
-        </div>
-      </div>
-
-    </aside>
-  </div>
-
-</div>
-
-<div data-proto-footer></div>
-
-<script src="../assets/clear.js"></script>
-<script src="../assets/proto-chrome.js"></script>
-<script>
-// Marcações no editor — clique destaca o card correspondente
-document.querySelectorAll('.editor-body .mark').forEach(m => {
-  m.addEventListener('click', () => {
-    const k = m.dataset.panel;
-    document.querySelectorAll('.panel-card').forEach(c => c.style.borderColor = '');
-    const target = document.querySelector(`.panel-card[data-key="${k}"]`);
-    if (target) {
-      target.style.borderColor = 'var(--clear-salmon)';
-      target.scrollIntoView({behavior: 'smooth', block: 'center'});
-      setTimeout(() => { target.style.borderColor = ''; }, 2500);
-    }
-  });
-});
-
-// Botões de aplicar / inserir — mockup
-document.querySelectorAll('.panel-action').forEach(b => {
-  b.addEventListener('click', e => {
-    e.stopPropagation();
-    alert('Mockup: em produção, esta ação aplicaria a sugestão no editor com tracking de mudanças. As cláusulas sugeridas viriam de uma base curada de TRs bem avaliados de outros municípios, classificados pela taxonomia do Radar.');
-  });
-});
-
-// Switcher
-document.querySelectorAll('.switcher button').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.switcher button').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-  });
-});
+        {!res && !loading && (
+          <div className="no-print" style={{ marginTop:16 }}>
+            <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {EXEMPLOS.map(ex=>(<button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>{ex}</button>))}
+            </div>
+          </div>
+        )}
+        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Montando o rascunho do TR…</span></div>)}
+        {err && (<div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>{err}</div>)}
+        {res && (<div className="ebr-rise" style={{ marginTop:26 }}>
+          <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
+            <button className="ebr-btn" onClick={()=>window.print()} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 14px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>Imprimir / PDF</button>
+          </div>
+          {renderResult(res)}
+        </div>)}
+      </main>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
