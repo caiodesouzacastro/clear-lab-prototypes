@@ -1,523 +1,314 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>A · EvidênciaBR Express — CLEAR Lab Prototypes</title>
-<meta name="description" content="Síntese de evidência conversacional para gestores públicos. Mockup CLEAR Lab.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/clear.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EvidênciaBR Express — CLEAR Lab (piloto)</title>
+<meta name="description" content="Síntese de evidência sob demanda para gestores públicos municipais. Piloto interno CLEAR Lab." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-/* Chat layout */
-.chat-shell {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 40px 48px 24px;
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 32px;
-}
-@media (max-width: 900px) { .chat-shell { grid-template-columns: 1fr; padding: 32px 24px 16px; } }
-
-.sidebar { border-right: 1px solid var(--border); padding-right: 24px; }
-@media (max-width: 900px) { .sidebar { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 24px; padding-right: 0; } }
-
-.sidebar h4 {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--clear-gray);
-  margin-bottom: 12px;
-  font-weight: 500;
-}
-.sidebar h4:not(:first-child) { margin-top: 24px; }
-
-.sample-list { display: flex; flex-direction: column; gap: 4px; }
-.sample-q {
-  font-family: inherit;
-  font-size: 13px;
-  text-align: left;
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--ink);
-  padding: 8px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  line-height: 1.4;
-  transition: all 0.15s ease;
-}
-.sample-q:hover { background: var(--clear-light-blue-bg); }
-.sample-q.active { background: var(--clear-light-blue-bg); color: var(--clear-blue); font-weight: 500; border-color: var(--clear-light-blue); }
-
-.corpora { font-size: 12px; color: var(--clear-gray); line-height: 1.6; }
-.corpora-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
-.corpora-item::before { content: "●"; color: var(--clear-green); font-size: 8px; }
-
-/* Chat area */
-.chat-area { min-width: 0; }
-
-.message {
-  margin-bottom: 24px;
-  padding: 16px 18px;
-  border-radius: 6px;
-  font-size: 15px;
-  line-height: 1.6;
-}
-.message-user {
-  background: var(--clear-light-blue-bg);
-  color: var(--clear-blue);
-  border-left: 3px solid var(--clear-light-blue);
-  font-weight: 500;
-}
-
-.message-bot { background: transparent; padding: 0; }
-
-.message-bot h3.problema, .message-bot h3.opcoes, .message-bot h3.consider, .message-bot h3.estudos, .message-bot h3.limitacoes {
-  font-family: var(--serif);
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--clear-blue);
-  margin: 22px 0 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border-soft);
-  letter-spacing: -0.005em;
-}
-.message-bot h3:first-child { margin-top: 4px; }
-
-.message-bot p { margin-bottom: 10px; }
-.message-bot ul { margin: 8px 0 14px 22px; }
-.message-bot ul li { margin-bottom: 6px; }
-
-.opcao {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  padding: 14px 16px;
-  margin-bottom: 10px;
-  border-radius: 4px;
-}
-.opcao-titulo { font-family: var(--serif); font-size: 15px; font-weight: 500; color: var(--clear-blue); margin-bottom: 4px; }
-.opcao-desc { font-size: 13px; color: var(--ink); line-height: 1.5; }
-
-.estudo {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 14px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  margin-bottom: 8px;
-  border-radius: 4px;
-  align-items: center;
-}
-.estudo-cit { font-family: var(--mono); font-size: 11px; color: var(--clear-gray); }
-.estudo-titulo { font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.4; }
-.estudo-titulo span { display: block; font-weight: 400; color: var(--clear-gray); font-size: 12px; margin-top: 2px; }
-.estudo-nivel {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.nivel-A { background: var(--clear-light-green); color: var(--clear-green); }
-.nivel-B { background: var(--clear-light-blue-bg); color: var(--clear-light-blue); }
-.nivel-C { background: var(--clear-light-amber); color: var(--clear-amber); }
-.nivel-D { background: var(--clear-light-gray); color: var(--clear-gray); }
-
-/* Input box */
-.composer {
-  position: sticky;
-  bottom: 0;
-  background: var(--paper);
-  border-top: 1px solid var(--border);
-  padding: 18px 0;
-  margin-top: 24px;
-}
-.composer-inner { display: flex; gap: 10px; align-items: flex-end; }
-.composer textarea {
-  flex: 1;
-  min-height: 50px;
-  max-height: 140px;
-  resize: none;
-}
-.composer-hint { font-family: var(--mono); font-size: 10px; color: var(--clear-gray); margin-top: 6px; letter-spacing: 0.04em; }
-
-/* Method blurb */
-.method-blurb {
-  background: var(--clear-light-gray);
-  border-left: 3px solid var(--clear-light-blue);
-  padding: 16px 20px;
-  font-size: 13px;
-  color: var(--ink);
-  line-height: 1.6;
-  margin-top: 12px;
-}
-.method-blurb strong { color: var(--clear-blue); }
-
-.transferibilidade {
-  background: var(--clear-light-salmon);
-  border-left: 3px solid var(--clear-salmon);
-  padding: 14px 18px;
-  font-size: 13px;
-  color: var(--ink);
-  line-height: 1.55;
-  margin: 14px 0;
-}
-.transferibilidade strong { color: var(--clear-salmon); }
-
+  :root{ color-scheme: light; }
+  html,body{ margin:0; padding:0; background:#F7F5EF; }
+  *{ box-sizing:border-box; }
+  .ebr-mono{font-family:'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+  .ebr-serif{font-family:'Fraunces',serif;}
+  .ebr-btn{transition:transform .15s ease,opacity .15s ease;cursor:pointer;}
+  .ebr-btn:hover{opacity:.92;transform:translateY(-1px);}
+  .ebr-chip{transition:border-color .15s ease,color .15s ease;cursor:pointer;}
+  .ebr-chip:hover{border-color:#08B0EE;color:#01354A;}
+  @keyframes ebrpulse{0%,100%{opacity:.35}50%{opacity:1}}
+  .ebr-dot{animation:ebrpulse 1.2s ease-in-out infinite;}
+  @keyframes ebrup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .ebr-rise{animation:ebrup .5s ease both;}
+  a{ color:#01354A; }
+  textarea, input{ font-family:'DM Sans',sans-serif; }
 </style>
 </head>
 <body>
+<div id="root"></div>
 
-<div data-proto-header
-     data-letter="A"
-     data-titulo="EvidênciaBR Express"
-     data-tag="Camada 2 · Sintetizar evidência"
-     data-subtitle="Síntese de evidência conversacional para gestores públicos. Resposta no padrão da Diretriz Metodológica do Ministério da Saúde — problema, opções, considerações de implementação e advertência sobre transferibilidade.">
-</div>
+<script type="text/babel">
+const { useState, useEffect } = React;
 
-<div class="chat-shell">
+/* ============================================================================
+   EvidênciaBR Express — PILOTO (motor: Google Gemini, free tier)
+   CLEAR Lab · FGV EESP
 
-  <aside class="sidebar">
-    <h4>Perguntas de exemplo</h4>
-    <div class="sample-list">
-      <button class="sample-q active" data-q="busca-ativa">O que sabemos sobre busca ativa escolar?</button>
-      <button class="sample-q" data-q="cras">CRAS volante reduz violência intrafamiliar?</button>
-      <button class="sample-q" data-q="creche">Creche em tempo integral melhora aprendizado?</button>
-      <button class="sample-q" data-q="merenda">Compra direta da agricultura familiar funciona?</button>
-    </div>
+   Motor de inferência isolado em synthesizeEvidence().
+   Chave Gemini gratuita: https://aistudio.google.com  (sem cartão)
+   A chave fica APENAS no navegador (localStorage) — nunca no repositório.
+   Para tornar público no futuro: trocar BYOK por um Cloudflare Worker que
+   esconda a chave (ver documento de arquitetura).
+   ========================================================================== */
 
-    <h4>Corpora consultados</h4>
-    <div class="corpora">
-      <div class="corpora-item">BVS Saúde Pública</div>
-      <div class="corpora-item">SciELO Educação</div>
-      <div class="corpora-item">Biblioteca CLEAR</div>
-      <div class="corpora-item">Evidência Express / Enap</div>
-      <div class="corpora-item">EVIPNet Brasil</div>
-      <div class="corpora-item">Cochrane Brasil</div>
-      <div class="corpora-item">Campbell Collaboration</div>
-    </div>
+const KEY_STORE = "ebr_gemini_key";
+const MODEL = "gemini-2.5-flash";
 
-    <h4>Nível de evidência</h4>
-    <div class="corpora" style="font-size: 11px;">
-      <div><span class="estudo-nivel nivel-A" style="margin-right:4px;">A</span> Revisão sistemática, RCT</div>
-      <div style="margin-top:4px;"><span class="estudo-nivel nivel-B" style="margin-right:4px;">B</span> Quase-experimental</div>
-      <div style="margin-top:4px;"><span class="estudo-nivel nivel-C" style="margin-right:4px;">C</span> Observacional, descritivo</div>
-      <div style="margin-top:4px;"><span class="estudo-nivel nivel-D" style="margin-right:4px;">D</span> Opinião, caso, narrativo</div>
-    </div>
-  </aside>
+const SYSTEM_PROMPT = `Você é o EvidênciaBR Express, um sintetizador de evidência para gestores públicos MUNICIPAIS brasileiros.
 
-  <main class="chat-area">
+Fluxo:
+1. Use a busca para encontrar evidência REAL e verificável sobre a pergunta (revisões sistemáticas, avaliações de impacto, What Works Centres, Campbell, J-PAL, EVIPNet, IPEA, dados de programas brasileiros).
+2. Classifique cada opção de intervenção por nível de evidência no padrão da Diretriz Metodológica do Ministério da Saúde:
+   - A: revisões sistemáticas / múltiplos ensaios controlados
+   - B: estudo controlado ou quase-experimental isolado
+   - C: estudos observacionais, séries de casos
+   - D: opinião de especialistas / sem evidência robusta
+3. Seja honesto: se a evidência for fraca ou ausente, diga. Avalie transferibilidade ao contexto municipal brasileiro (não assuma que estudo internacional transfere direto).
 
-    <div class="method-blurb" style="margin-bottom:24px;">
-      <strong>Como ler esta resposta.</strong> Síntese rápida (rapid review) não substitui revisão sistemática. As respostas seguem o protocolo da Diretriz Metodológica do MS adaptado para resposta em minutos: <em>caracterização do problema → opções de enfrentamento → considerações de implementação → estudos consultados → o que não sabemos</em>. A advertência de transferibilidade é parte da resposta, não disclaimer.
-    </div>
+Responda APENAS com um objeto JSON válido, SEM markdown, SEM cercas, SEM texto antes ou depois. Formato:
+{
+  "problema": "reformulação clara e técnica do problema de política",
+  "opcoes": [
+    {"titulo":"nome curto","mecanismo":"como deveria funcionar (1-2 frases)","nivel":"A|B|C|D","evidencia":"o que a evidência mostra, com magnitude se houver (2-3 frases)","transferibilidade":"ressalva sobre aplicar no contexto municipal BR (1 frase)"}
+  ],
+  "limitacoes":"o que esta síntese NÃO cobre / cuidados (2-3 frases)",
+  "fontes":[{"titulo":"título","url":"url real"}]
+}
+Inclua de 3 a 5 opções e de 3 a 6 fontes reais. Português do Brasil.`;
 
-    <div id="conversation"></div>
-
-    <div class="composer">
-      <div class="composer-inner">
-        <textarea class="textarea" placeholder="Faça uma pergunta de política pública..." id="composer-input"></textarea>
-        <button class="btn btn-primary" id="composer-send">Perguntar</button>
-      </div>
-      <div class="composer-hint">No mockup, apenas as quatro perguntas de exemplo na barra lateral retornam resposta.</div>
-    </div>
-
-  </main>
-
-</div>
-
-<div data-proto-footer></div>
-
-<script src="../assets/clear.js"></script>
-<script src="../assets/proto-chrome.js"></script>
-<script>
-const RESPOSTAS = {
-  "busca-ativa": {
-    pergunta: "O que sabemos sobre busca ativa escolar?",
-    html: `
-      <h3 class="problema">Caracterização do problema</h3>
-      <p>Em 2024, cerca de 2,1 milhões de crianças e adolescentes de 4 a 17 anos estavam fora da escola no Brasil (PNAD-C). O abandono concentra-se em 7º e 8º ano, em meninos negros de territórios com baixa cobertura de equipamentos sociais. Reverter abandono exige ação intersetorial entre Educação, Assistência Social e Saúde — politicamente difícil em estrutura municipal típica.</p>
-
-      <h3 class="opcoes">Opções de enfrentamento</h3>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 1 · Visita domiciliar com agente intersetorial</div>
-        <div class="opcao-desc">Equipe de busca ativa formada por agente social, professor e agente comunitário de saúde. Visita a domicílios com criança ausente por mais de 5 dias consecutivos, plano de retorno pactuado com a família. Evidência: programas com componente intersetorial mostram efeito 2-3x maior do que ação apenas escolar (ver estudo 1, 2).</div>
-      </div>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 2 · Sistema de alerta precoce com gatilho automático</div>
-        <div class="opcao-desc">Cruzamento diário de frequência escolar com cadastro do Bolsa Família/Cadastro Único, disparando notificação automática ao CRAS quando faltas excedem limiar. Reduz o tempo até primeira intervenção de semanas para 48-72h (estudo 3). Requer integração de sistemas que muitos municípios não têm.</div>
-      </div>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 3 · Programa estruturado de tutoria com pares</div>
-        <div class="opcao-desc">Aluno de risco recebe tutor (professor ou aluno mais velho) que acompanha presença, desempenho e rede afetiva. Evidência mais consistente para reengajamento de quem já voltou — menos para impedir o abandono inicial (estudo 4).</div>
-      </div>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 4 · Transferência condicionada localmente complementar</div>
-        <div class="opcao-desc">Bolsa municipal que complementa o Bolsa Família condicionada a frequência. Evidência internacional favorável (Bono em Honduras, Familias en Acción), brasileira mais escassa e enviesada. Custo fiscal alto e desenho jurídico complexo.</div>
-      </div>
-
-      <h3 class="consider">Considerações de implementação</h3>
-      <ul>
-        <li><strong>Custo.</strong> Visita domiciliar é a mais barata por criança alcançada; alerta precoce exige investimento inicial em sistemas; transferência tem custo recorrente.</li>
-        <li><strong>Tempo até resultado.</strong> Sistema de alerta produz indicador imediato; programas de tutoria precisam de 1 ano letivo para mostrar efeito.</li>
-        <li><strong>Capacidade.</strong> Município pequeno pode operar Opção 1 com equipe enxuta; Opção 2 exige TI mínima.</li>
-        <li><strong>Coordenação intersetorial.</strong> Todas as opções dependem de pactuação Educação-Assistência. Sem isso, viram ação isolada da Educação e perdem efeito.</li>
-      </ul>
-
-      <div class="transferibilidade">
-        <strong>Transferibilidade.</strong> A evidência mais robusta vem de municípios médios e grandes do Sul/Sudeste e da experiência colombiana e mexicana. Para municípios de pequeno porte do Norte/Nordeste, o efeito esperado é provavelmente menor — não pela qualidade do programa, mas porque o gargalo costuma ser de infraestrutura básica (transporte, alimentação, água), e não de motivação. Considere fazer diagnóstico antes de escolher a opção.
-      </div>
-
-      <h3 class="estudos">Estudos consultados</h3>
-      <div class="estudo">
-        <span class="estudo-cit">[1]</span>
-        <div class="estudo-titulo">Programa Bolsa Família e abandono escolar no Nordeste<span>De Janvry et al., 2012 · Cadernos de Pesquisa</span></div>
-        <span class="estudo-nivel nivel-B">B</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[2]</span>
-        <div class="estudo-titulo">Busca Ativa Escolar UNICEF: avaliação de implementação<span>UNICEF Brasil, 2021 · Relatório técnico</span></div>
-        <span class="estudo-nivel nivel-C">C</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[3]</span>
-        <div class="estudo-titulo">Sistemas de alerta precoce contra abandono — revisão<span>Bowers et al., 2013 · Educational Researcher</span></div>
-        <span class="estudo-nivel nivel-A">A</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[4]</span>
-        <div class="estudo-titulo">Tutoria entre pares: efeitos na permanência<span>Campbell Collaboration, 2019 · Revisão sistemática</span></div>
-        <span class="estudo-nivel nivel-A">A</span>
-      </div>
-
-      <h3 class="limitacoes">O que ainda não sabemos</h3>
-      <ul>
-        <li>Efeito de combinações de opções (busca ativa + alerta precoce) — quase nenhum estudo testa pacote.</li>
-        <li>Custo-efetividade comparada em municípios pequenos brasileiros.</li>
-        <li>Persistência do efeito além de 2 anos — quase toda evidência é de curto prazo.</li>
-      </ul>
-    `
-  },
-
-  "cras": {
-    pergunta: "CRAS volante reduz violência intrafamiliar em territórios isolados?",
-    html: `
-      <h3 class="problema">Caracterização do problema</h3>
-      <p>Em territórios rurais e ribeirinhos, distância média ao CRAS supera 30 km. Famílias vivendo violência doméstica enfrentam barreira física e simbólica para procurar serviço, e a notificação obrigatória da Saúde frequentemente não tem para onde encaminhar.</p>
-
-      <h3 class="opcoes">Opções de enfrentamento</h3>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 1 · CRAS volante mensal estruturado</div>
-        <div class="opcao-desc">Equipe do CRAS faz itinerância programada, com pelo menos 1 visita/mês a cada localidade. Combinada com acompanhamento remoto via WhatsApp da equipe técnica. Evidência mostra aumento expressivo de cobertura, mas efeito sobre violência é mediado pela rede de proteção disponível (estudo 1, 2).</div>
-      </div>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 2 · CRAS volante + agente comunitário formado em violência</div>
-        <div class="opcao-desc">CRAS volante combinado com formação específica do ACS local em identificação de violência. ACS vira porta de entrada local. Aumenta detecção, mas pode aumentar revitimização se rede de encaminhamento é frágil (estudo 3).</div>
-      </div>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 3 · Casa-abrigo regional + transporte garantido</div>
-        <div class="opcao-desc">Investimento na ponta de saída — casa-abrigo intermunicipal e contrato com transporte para deslocamento de emergência. Endereça consequência, não causa. Custo alto, mas evidência de proteção mais robusta (estudo 4).</div>
-      </div>
-
-      <h3 class="consider">Considerações de implementação</h3>
-      <ul>
-        <li><strong>Coordenação.</strong> CRAS volante sem rede de Saúde e Segurança em coordenação tem efeito quase nulo sobre violência (apenas sobre acesso a benefício).</li>
-        <li><strong>Risco de revitimização.</strong> Aumentar identificação sem aumentar capacidade de resposta piora a situação da mulher.</li>
-        <li><strong>Articulação com Defensoria.</strong> Sem medida protetiva acessível, denúncia não vira proteção.</li>
-      </ul>
-
-      <div class="transferibilidade">
-        <strong>Transferibilidade.</strong> Evidência principal vem de territórios amazônicos e de quilombolas no Nordeste. Para municípios do Centro-Oeste ou áreas periurbanas, a aplicabilidade é menor — o problema lá é mais de invisibilidade urbana do que de distância física.
-      </div>
-
-      <h3 class="estudos">Estudos consultados</h3>
-      <div class="estudo">
-        <span class="estudo-cit">[1]</span>
-        <div class="estudo-titulo">SUAS rural na Amazônia: efeitos de cobertura<span>FGV CLEAR, 2022 · Working paper</span></div>
-        <span class="estudo-nivel nivel-C">C</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[2]</span>
-        <div class="estudo-titulo">Estratégias móveis de proteção social — revisão<span>Banco Mundial, 2020 · WPS 9301</span></div>
-        <span class="estudo-nivel nivel-A">A</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[3]</span>
-        <div class="estudo-titulo">Identificação de violência por ACS — riscos e potências<span>Cad. Saúde Pública, Schraiber et al., 2017</span></div>
-        <span class="estudo-nivel nivel-C">C</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[4]</span>
-        <div class="estudo-titulo">Casas-abrigo e proteção: revisão Cochrane<span>Cochrane Public Health, 2019</span></div>
-        <span class="estudo-nivel nivel-A">A</span>
-      </div>
-
-      <h3 class="limitacoes">O que ainda não sabemos</h3>
-      <ul>
-        <li>Frequência ótima de itinerância em territórios diferentes.</li>
-        <li>Como CRAS volante interage com rede SUAS já frágil — pode canibalizar equipe sem expandir cobertura líquida.</li>
-        <li>Efeito sobre violência psicológica (estudos focam em violência física).</li>
-      </ul>
-    `
-  },
-
-  "creche": {
-    pergunta: "Creche em tempo integral melhora aprendizado posterior?",
-    html: `
-      <h3 class="problema">Caracterização do problema</h3>
-      <p>A demanda por creche em tempo integral cresce com a entrada da mulher no mercado de trabalho, mas o custo é 1,7 a 2,3 vezes maior que parcial. Pergunta de gestor: o benefício educacional adicional justifica o custo, ou seria melhor abrir mais vagas em tempo parcial?</p>
-
-      <h3 class="opcoes">Opções de enfrentamento</h3>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 1 · Universalizar creche parcial primeiro</div>
-        <div class="opcao-desc">Priorizar cobertura sobre intensidade. Evidência: efeito do acesso a qualquer creche sobre desempenho posterior é robusto e grande; efeito marginal de tempo integral sobre parcial é positivo, mas pequeno e dependente da qualidade da creche (estudo 1, 2).</div>
-      </div>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 2 · Tempo integral focalizado em vulnerabilidade</div>
-        <div class="opcao-desc">Tempo integral nas creches em territórios de maior vulnerabilidade socioeconômica. Maximiza retorno educacional, é defensável fiscalmente, mas politicamente complicado se demanda da classe média trabalhadora é alta.</div>
-      </div>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 3 · Tempo integral com componente nutricional e cognitivo</div>
-        <div class="opcao-desc">Tempo integral só compensa o custo extra quando o turno adicional tem programação pedagógica estruturada (não apenas custódia). Modelo Perry/Carolina Abecedarian: efeitos persistem até a vida adulta (estudo 3). Requer formação continuada — gargalo real em município pequeno.</div>
-      </div>
-
-      <h3 class="consider">Considerações de implementação</h3>
-      <ul>
-        <li><strong>Qualidade importa mais que duração.</strong> Tempo integral em creche de qualidade baixa pode ter efeito nulo ou negativo no desenvolvimento socioemocional.</li>
-        <li><strong>Razão adulto-criança.</strong> Determinante de qualidade mais consistente na evidência. Tempo integral aumenta exposição — boa se a razão é adequada, ruim se não.</li>
-        <li><strong>Continuidade.</strong> O efeito da pré-escola se dissipa nas séries iniciais se a qualidade da escola não acompanha.</li>
-      </ul>
-
-      <div class="transferibilidade">
-        <strong>Transferibilidade.</strong> A maior parte da evidência causal vem dos EUA (HighScope Perry, Abecedarian), com programas extremamente intensivos e bem financiados. Evidência brasileira é majoritariamente observacional. Cautela ao prometer "efeito Perry" em creche típica de município pequeno.
-      </div>
-
-      <h3 class="estudos">Estudos consultados</h3>
-      <div class="estudo">
-        <span class="estudo-cit">[1]</span>
-        <div class="estudo-titulo">Creche e desempenho escolar no Brasil<span>Curi & Menezes-Filho, 2009 · RBE</span></div>
-        <span class="estudo-nivel nivel-B">B</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[2]</span>
-        <div class="estudo-titulo">Efeitos de longo prazo de pré-escola — revisão<span>Campbell Collaboration, 2018</span></div>
-        <span class="estudo-nivel nivel-A">A</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[3]</span>
-        <div class="estudo-titulo">High/Scope Perry Preschool — efeitos persistentes<span>Heckman et al., 2010 · Quantitative Economics</span></div>
-        <span class="estudo-nivel nivel-A">A</span>
-      </div>
-
-      <h3 class="limitacoes">O que ainda não sabemos</h3>
-      <ul>
-        <li>Custo-efetividade comparada de Opção 1 vs Opção 2 no contexto brasileiro municipal.</li>
-        <li>Como a qualidade do turno adicional é determinada na prática em creches públicas.</li>
-        <li>Efeito sobre saúde mental materna (que justificaria política mesmo se efeito educacional fosse pequeno).</li>
-      </ul>
-    `
-  },
-
-  "merenda": {
-    pergunta: "Compra direta de agricultura familiar para merenda funciona?",
-    html: `
-      <h3 class="problema">Caracterização do problema</h3>
-      <p>A Lei 11.947/2009 obriga municípios a destinar no mínimo 30% do FNDE-PNAE à compra direta da agricultura familiar. Cumprimento médio gira em 25% (CECANE, 2023), com altíssima dispersão. Pergunta: a obrigação está produzindo o efeito duplo esperado — melhor merenda e fortalecimento da agricultura familiar local?</p>
-
-      <h3 class="opcoes">Opções de enfrentamento</h3>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 1 · Apoio técnico à formalização do produtor</div>
-        <div class="opcao-desc">Maior obstáculo ao cumprimento é DAP/CAF e organização logística do produtor, não a vontade do gestor. Cooperação com EMATER, sindicato rural e CRAS. Evidência: municípios que investem em ATER + CRAS atingem o piso de 30% 2x mais frequentemente (estudo 1).</div>
-      </div>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 2 · Edital de chamada pública simplificado</div>
-        <div class="opcao-desc">Reduzir burocracia da chamada pública (modelo de TR enxuto, agrupamento de produtos por sazonalidade). Aumenta participação de agricultores. Risco: edital mal feito é judicializado pelo controle externo.</div>
-      </div>
-
-      <div class="opcao">
-        <div class="opcao-titulo">Opção 3 · Compras intermunicipais (consórcio)</div>
-        <div class="opcao-desc">Para municípios muito pequenos, demanda escolar isolada é insuficiente para atrair produtor organizado. Consórcio público de compra agrega demanda. Pouca evidência avaliativa, várias experiências relatadas (estudo 3).</div>
-      </div>
-
-      <h3 class="consider">Considerações de implementação</h3>
-      <ul>
-        <li><strong>Sazonalidade.</strong> Cardápio engessado por ano letivo bate com sazonalidade agrícola. Cardápios flexíveis funcionam melhor.</li>
-        <li><strong>Pagamento.</strong> Atraso de pagamento pela prefeitura mata o ecossistema. Produtor pequeno não tem fluxo de caixa para esperar.</li>
-        <li><strong>Nutricionista.</strong> RDC do PNAE exige nutricionista responsável; município pequeno frequentemente compartilha um — sem agenda dedicada, programação alimentar fica precária.</li>
-      </ul>
-
-      <div class="transferibilidade">
-        <strong>Transferibilidade.</strong> Funciona melhor em municípios com agricultura familiar minimamente organizada e tradição de cooperativismo. Em municípios de fronteira agrícola dominados por commodities (soja, gado), o "30%" vira ficção. Avaliar a estrutura agrária do município antes de prometer impacto.
-      </div>
-
-      <h3 class="estudos">Estudos consultados</h3>
-      <div class="estudo">
-        <span class="estudo-cit">[1]</span>
-        <div class="estudo-titulo">Cumprimento do PNAE 30%: determinantes municipais<span>CECANE Sul, 2023 · Relatório técnico</span></div>
-        <span class="estudo-nivel nivel-C">C</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[2]</span>
-        <div class="estudo-titulo">PAA e PNAE: impactos sobre renda do agricultor familiar<span>IPEA, Soares et al., 2021</span></div>
-        <span class="estudo-nivel nivel-B">B</span>
-      </div>
-      <div class="estudo">
-        <span class="estudo-cit">[3]</span>
-        <div class="estudo-titulo">Consórcios públicos para PNAE: estudo de casos<span>FGV CLEAR, 2020 · Série Avaliação na Prática</span></div>
-        <span class="estudo-nivel nivel-D">D</span>
-      </div>
-
-      <h3 class="limitacoes">O que ainda não sabemos</h3>
-      <ul>
-        <li>Efeito sobre qualidade nutricional efetivamente entregue à criança (estudos focam em compra, não em consumo).</li>
-        <li>Sustentabilidade do efeito sobre o produtor após o fim da relação contratual.</li>
-        <li>Custo-efetividade contra alternativas (transferência direta, programa de renda rural).</li>
-      </ul>
-    `
-  }
-};
-
-const conv = document.getElementById('conversation');
-const buttons = document.querySelectorAll('.sample-q');
-
-function renderConversation(key) {
-  const r = RESPOSTAS[key];
-  if (!r) return;
-  conv.innerHTML = `
-    <div class="message message-user">${r.pergunta}</div>
-    <div class="message message-bot">${r.html}</div>
-  `;
-  buttons.forEach(b => b.classList.toggle('active', b.dataset.q === key));
+function parseJSON(text){
+  let t = (text||"").replace(/```json|```/g, "").trim();
+  const s = t.indexOf("{"), e = t.lastIndexOf("}");
+  if (s !== -1 && e !== -1) t = t.slice(s, e+1);
+  return JSON.parse(t);
 }
 
-buttons.forEach(b => b.addEventListener('click', () => renderConversation(b.dataset.q)));
+async function synthesizeEvidence(question, apiKey){
+  const r = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
+    {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        systemInstruction:{ parts:[{ text: SYSTEM_PROMPT }] },
+        contents:[{ role:"user", parts:[{ text: question }] }],
+        tools:[{ googleSearch:{} }],                 // grounding com busca real
+        generationConfig:{ temperature:0.3 }
+      })
+    }
+  );
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message || "Erro na API Gemini");
+  const cand = j.candidates && j.candidates[0];
+  const txt = (cand?.content?.parts || []).map(p=>p.text).filter(Boolean).join("");
+  const parsed = parseJSON(txt);
 
-document.getElementById('composer-send').addEventListener('click', () => {
-  const inp = document.getElementById('composer-input');
-  if (!inp.value.trim()) return;
-  alert('No mockup estático, apenas as quatro perguntas de exemplo na barra lateral retornam síntese. Em produção, a pergunta seria enviada para um LLM com RAG sobre os corpora listados.');
-});
+  // Fontes REAIS que o Gemini de fato consultou (anti-alucinação de URL):
+  const chunks = cand?.groundingMetadata?.groundingChunks || [];
+  const grounded = chunks
+    .map(c => ({ titulo: c.web?.title || c.web?.uri, url: c.web?.uri }))
+    .filter(x => x.url);
+  if (grounded.length) parsed.fontes = grounded;
+  return parsed;
+}
 
-renderConversation('busca-ativa');
+/* ============================ DESIGN MICHEL ============================ */
+const C = { navy:"#01354A", navy2:"#012030", blue:"#08B0EE", green:"#98C43B", paper:"#F7F5EF", ink:"#1A1A1C", amber:"#E0992E", rust:"#C2572E" };
+const NIVEL = {
+  A:{cor:C.green,rotulo:"Forte",desc:"Revisões sistemáticas / múltiplos ECRs"},
+  B:{cor:C.blue,rotulo:"Moderada",desc:"Estudo controlado ou quase-experimental"},
+  C:{cor:C.amber,rotulo:"Limitada",desc:"Estudos observacionais / séries de casos"},
+  D:{cor:C.rust,rotulo:"Incipiente",desc:"Opinião de especialista / sem evidência robusta"},
+};
+const EXEMPLOS = [
+  "Como reduzir a evasão escolar no ensino médio?",
+  "O que funciona para diminuir filas na atenção primária?",
+  "Quais intervenções reduzem a reincidência criminal juvenil?",
+  "Como aumentar a adesão à creche em territórios vulneráveis?",
+];
+
+function KeyGate({ onSave }){
+  const [v, setV] = useState("");
+  return (
+    <div style={{ background:"#fff", border:`1px solid ${C.blue}`, borderRadius:14, padding:"20px 22px", marginTop:18 }}>
+      <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7, marginBottom:8 }}>Configuração · uso interno</div>
+      <p style={{ margin:"0 0 12px", fontSize:14.5, lineHeight:1.55 }}>
+        Cole sua chave gratuita do <strong>Google AI Studio</strong>. Ela fica só neste navegador (localStorage),
+        nunca no repositório. Pegue a sua em <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a> (sem cartão).
+      </p>
+      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+        <input type="password" value={v} onChange={e=>setV(e.target.value)} placeholder="AIza…"
+          style={{ flex:1, minWidth:220, border:"1px solid #e4ded2", borderRadius:9, padding:"10px 12px", fontSize:14 }} />
+        <button className="ebr-btn" onClick={()=>v.trim() && onSave(v.trim())}
+          style={{ background:C.navy, color:"#fff", border:"none", borderRadius:9, padding:"10px 20px", fontSize:14, fontWeight:700 }}>
+          Salvar chave
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [apiKey, setApiKey] = useState("");
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [res, setRes] = useState(null);
+  const [err, setErr] = useState(null);
+
+  useEffect(()=>{ try{ const k = localStorage.getItem(KEY_STORE); if(k) setApiKey(k); }catch(e){} }, []);
+  function saveKey(k){ try{ localStorage.setItem(KEY_STORE, k); }catch(e){} setApiKey(k); }
+  function clearKey(){ try{ localStorage.removeItem(KEY_STORE); }catch(e){} setApiKey(""); }
+
+  async function run(pergunta){
+    const texto = (pergunta ?? q).trim();
+    if(!texto || loading || !apiKey) return;
+    setQ(texto); setLoading(true); setErr(null); setRes(null);
+    try{
+      const out = await synthesizeEvidence(texto, apiKey);
+      setRes(out);
+    }catch(e){
+      setErr("Não consegui montar a síntese. Verifique a chave/limite diário do Gemini ou reformule a pergunta. (" + (e.message||"") + ")");
+    }finally{ setLoading(false); }
+  }
+
+  return (
+    <div style={{ fontFamily:"'DM Sans',sans-serif", color:C.ink, background:C.paper, minHeight:"100vh" }}>
+      <header style={{ background:C.navy, color:"#fff", padding:"30px 28px 34px", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", top:-120, right:-80, width:320, height:320, borderRadius:"50%", background:C.blue, opacity:.08 }} />
+        <div style={{ position:"absolute", bottom:-140, left:-60, width:260, height:260, borderRadius:"50%", background:C.green, opacity:.07 }} />
+        <div style={{ maxWidth:920, margin:"0 auto", position:"relative" }}>
+          <div className="ebr-mono" style={{ fontSize:11, color:C.blue, marginBottom:14 }}>CLEAR Lab · Protótipo A · Camada 02 — Sintetizar · PILOTO</div>
+          <h1 className="ebr-serif" style={{ fontSize:46, lineHeight:1.05, margin:0, fontWeight:600 }}>
+            Evidência<span style={{ fontStyle:"italic", color:C.blue }}>BR</span> Express
+          </h1>
+          <p style={{ maxWidth:560, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>
+            Faça uma pergunta de política pública. O sistema busca evidência real, organiza opções e classifica
+            cada uma por nível — no padrão da Diretriz Metodológica do Ministério da Saúde.
+          </p>
+        </div>
+      </header>
+
+      <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
+        {!apiKey && <KeyGate onSave={saveKey} />}
+
+        {apiKey && (
+          <React.Fragment>
+            <div style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
+              <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Pergunta de política</label>
+              <textarea value={q} onChange={e=>setQ(e.target.value)}
+                onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
+                placeholder="Ex.: o que funciona para reduzir a evasão escolar no ensino médio?"
+                rows={3}
+                style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
+                <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
+                <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
+                  style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
+                  {loading ? "Sintetizando…" : "Sintetizar evidência"}
+                </button>
+              </div>
+            </div>
+
+            {!res && !loading && (
+              <div style={{ marginTop:16 }}>
+                <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                  {EXEMPLOS.map(ex=>(
+                    <button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)}
+                      style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>
+                      {ex}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {loading && (
+              <div style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}>
+                <span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} />
+                <span style={{ fontSize:14.5 }}>Buscando evidência real e avaliando níveis…</span>
+              </div>
+            )}
+
+            {err && (
+              <div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>
+                {err}
+              </div>
+            )}
+
+            {res && (
+              <div className="ebr-rise" style={{ marginTop:26 }}>
+                <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
+                <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 28px", fontWeight:500 }}>{res.problema}</p>
+
+                <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:12 }}>Opções de intervenção · por nível de evidência</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                  {(res.opcoes||[]).map((o,i)=>{
+                    const n = NIVEL[o.nivel] || NIVEL.D;
+                    return (
+                      <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"18px 20px", borderLeft:`5px solid ${n.cor}` }}>
+                        <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+                          <h3 className="ebr-serif" style={{ fontSize:19.5, margin:0, fontWeight:600, color:C.navy }}>{o.titulo}</h3>
+                          <span title={n.desc} style={{ background:n.cor, color:(o.nivel==="A"||o.nivel==="C")?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>
+                            Nível {o.nivel} · {n.rotulo}
+                          </span>
+                        </div>
+                        {o.mecanismo && <p style={{ margin:"9px 0 0", fontSize:14, color:"#6b6757", fontStyle:"italic" }}>{o.mecanismo}</p>}
+                        <p style={{ margin:"11px 0 0", fontSize:15, lineHeight:1.58 }}>{o.evidencia}</p>
+                        {o.transferibilidade && (
+                          <div style={{ marginTop:12, padding:"9px 12px", background:C.paper, borderRadius:8, fontSize:13, color:"#5a5648" }}>
+                            <strong style={{ color:C.navy }}>Transferibilidade · </strong>{o.transferibilidade}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {res.limitacoes && (
+                  <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
+                    <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>Limitações desta síntese</div>
+                    <p style={{ margin:0, fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.85)" }}>{res.limitacoes}</p>
+                  </div>
+                )}
+
+                {res.fontes && res.fontes.length>0 && (
+                  <div style={{ marginTop:22 }}>
+                    <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:10 }}>Fontes consultadas</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                      {res.fontes.map((f,i)=>(
+                        <a key={i} href={f.url} target="_blank" rel="noreferrer"
+                          style={{ fontSize:13.5, color:C.navy, textDecoration:"none", borderBottom:`1px solid ${C.blue}`, alignSelf:"flex-start", paddingBottom:1 }}>
+                          {f.titulo} ↗
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginTop:28, paddingTop:20, borderTop:"1px solid #e4ded2" }}>
+                  <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:10 }}>Escala de evidência (padrão Diretriz/MS)</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:14 }}>
+                    {Object.entries(NIVEL).map(([k,v])=>(
+                      <div key={k} style={{ display:"flex", alignItems:"center", gap:7, fontSize:12, color:"#5a5648" }}>
+                        <span style={{ width:12, height:12, borderRadius:3, background:v.cor }} />
+                        <strong>{k}</strong> · {v.desc}
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ marginTop:16, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>
+                    Síntese rápida gerada por IA com busca ao vivo — <strong>não substitui revisão sistemática</strong>.
+                    A IA organiza e classifica evidência; a decisão segue do gestor. Verifique sempre as fontes originais.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop:34, fontSize:11.5, color:"#a8a292" }}>
+              Chave configurada · <span className="ebr-btn" onClick={clearKey} style={{ textDecoration:"underline", color:"#8a8576" }}>trocar chave</span>
+            </div>
+          </React.Fragment>
+        )}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
