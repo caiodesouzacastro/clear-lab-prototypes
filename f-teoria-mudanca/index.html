@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Auxiliar de Teoria de Mudança — CLEAR Lab (piloto)</title>
-<meta name="description" content="Oferece elementos para o gestor construir sua teoria de mudança. Piloto interno CLEAR Lab." />
+<meta name="description" content="Elementos editáveis para construir sua teoria de mudança. Piloto interno CLEAR Lab." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -25,22 +25,29 @@
   @keyframes ebrup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   .ebr-rise{animation:ebrup .5s ease both;}
   a{ color:#01354A; }
-  textarea{ font-family:'DM Sans',sans-serif; }
+  textarea, input{ font-family:'DM Sans',sans-serif; }
   .ebr-fontes a:hover{ color:#01354A; text-decoration:underline; }
+  .ebr-inp{ width:100%; border:1px solid transparent; background:transparent; border-radius:6px; padding:4px 6px; font-size:14.5px; line-height:1.5; color:#1A1A1C; }
+  .ebr-inp:hover{ border-color:#e4ded2; }
+  .ebr-inp:focus{ outline:none; border-color:#08B0EE; background:#fff; }
+  .ebr-del{ border:none; background:transparent; cursor:pointer; font-size:16px; line-height:1; padding:0 4px; color:#bdb7a8; }
+  .ebr-del:hover{ color:#C2572E; }
+  .ebr-add{ border:1px dashed #cfc8ba; background:transparent; color:#8a8576; border-radius:7px; padding:5px 10px; font-size:12px; cursor:pointer; margin-top:6px; }
+  .ebr-add:hover{ border-color:#08B0EE; color:#01354A; }
   @media print {
     .no-print{ display:none !important; }
     html,body{ background:#fff !important; }
     header{ padding:16px 0 !important; }
     main{ padding:12px 0 0 !important; }
+    .ebr-inp{ border-color:transparent !important; }
   }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState } = React;
+const { useState, useEffect } = React;
 const WORKER_URL = "https://evidencia-br.caiodesouzacastro28.workers.dev";
-const PRODUTO = "teoria";
 
 function parseJSON(text){
   let t = (text||"").replace(/```json|```/g, "").trim();
@@ -49,7 +56,7 @@ function parseJSON(text){
   return JSON.parse(t);
 }
 async function ask(question){
-  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ produto: PRODUTO, question }) });
+  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ produto:"teoria", question }) });
   const json = await r.json();
   if (json.error) throw new Error(json.error.message || "Erro na API");
   const cand = json.candidates && json.candidates[0];
@@ -62,103 +69,117 @@ async function ask(question){
 }
 
 const C = { navy:"#01354A", navy2:"#012030", blue:"#08B0EE", green:"#98C43B", paper:"#F7F5EF", ink:"#1A1A1C", amber:"#E0992E", rust:"#C2572E" };
-const NIVEL = {
-  A:{cor:C.green,rotulo:"Forte",desc:"Revisões sistemáticas / múltiplos ECRs"},
-  B:{cor:C.blue,rotulo:"Moderada",desc:"Estudo controlado ou quase-experimental"},
-  C:{cor:C.amber,rotulo:"Limitada",desc:"Estudos observacionais / séries de casos"},
-  D:{cor:C.rust,rotulo:"Incipiente",desc:"Opinião de especialista / sem evidência robusta"},
-};
-const INTENS = { "Baixo":C.green, "Médio":C.amber, "Medio":C.amber, "Alto":C.rust };
-const EXEMPLOS = ["Programa de busca ativa contra a evasão escolar", "Transferência de renda para reduzir trabalho infantil", "Telemedicina para reduzir filas na atenção primária", "Mentoria para reduzir reincidência juvenil"];
+const EXEMPLOS = [
+  "Programa de busca ativa contra a evasão escolar",
+  "Transferência de renda para reduzir trabalho infantil",
+  "Telemedicina para reduzir filas na atenção primária",
+  "Mentoria para reduzir reincidência juvenil",
+];
 
-function Selo({texto, cor, escuro}){
-  return <span style={{ background:cor, color:escuro?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>{texto}</span>;
-}
-function NivelSelo({nivel}){
-  const n = NIVEL[nivel] || NIVEL.D;
-  return <span title={n.desc}><Selo texto={"Nível "+nivel+" · "+n.rotulo} cor={n.cor} escuro={nivel==="A"||nivel==="C"} /></span>;
-}
-function Fontes({fontes}){
-  if(!fontes || !fontes.length) return null;
-  return (
-    <div className="ebr-fontes" style={{ marginTop:24 }}>
-      <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:7 }}>Fontes consultadas</div>
-      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-        {fontes.map((f,i)=>(<a key={i} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize:11.5, color:"#8a8576", textDecoration:"none", lineHeight:1.45 }}>· {f.titulo} ↗</a>))}
-      </div>
-    </div>
-  );
-}
-function NavyBox({rotulo, children}){
-  return (
-    <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
-      <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>{rotulo}</div>
-      <div style={{ fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.88)" }}>{children}</div>
-    </div>
-  );
+// ---------- normaliza o resultado num doc editável ----------
+function aoDoc(res){
+  const c = res.cadeia || {};
+  return {
+    problema: res.problema || "",
+    causas: res.causas || [],
+    insumos: c.insumos || [],
+    atividades: c.atividades || [],
+    produtos: c.produtos || [],
+    resultados: c.resultados || [],
+    impacto: c.impacto || "",
+    premissas: res.premissas || [],
+    riscos: res.riscos || [],
+    desenho: (res.avaliacao||{}).desenho || "",
+    justificativa: (res.avaliacao||{}).justificativa || "",
+    fontes: res.fontes || [],
+  };
 }
 
+function download(filename, content, mime){
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function toMarkdown(d){
+  const L = arr => (arr||[]).map(x=>"- "+x).join("\n");
+  return `# Teoria de Mudança\n\n**Problema:** ${d.problema}\n\n## Diagnóstico — causas prováveis\n${L(d.causas)}\n\n## Cadeia\n\n### Insumos\n${L(d.insumos)}\n\n### Atividades\n${L(d.atividades)}\n\n### Produtos\n${L(d.produtos)}\n\n### Resultados\n${L(d.resultados)}\n\n### Impacto\n${d.impacto}\n\n## Premissas críticas\n${L(d.premissas)}\n\n## Riscos\n${L(d.riscos)}\n\n## Desenho avaliativo sugerido\n**${d.desenho}.** ${d.justificativa}\n`;
+}
+function toDocHtml(d){
+  const ul = arr => "<ul>"+(arr||[]).map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>";
+  const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"></head><body style="font-family:Calibri,Arial,sans-serif;">
+<h1>Teoria de Mudança</h1>
+<p><b>Problema:</b> ${esc(d.problema)}</p>
+<h2>Diagnóstico — causas prováveis</h2>${ul(d.causas)}
+<h2>Cadeia</h2>
+<h3>Insumos</h3>${ul(d.insumos)}
+<h3>Atividades</h3>${ul(d.atividades)}
+<h3>Produtos</h3>${ul(d.produtos)}
+<h3>Resultados</h3>${ul(d.resultados)}
+<h3>Impacto</h3><p>${esc(d.impacto)}</p>
+<h2>Premissas críticas</h2>${ul(d.premissas)}
+<h2>Riscos</h2>${ul(d.riscos)}
+<h2>Desenho avaliativo sugerido</h2><p><b>${esc(d.desenho)}.</b> ${esc(d.justificativa)}</p>
+</body></html>`;
+}
+function toCsv(d){
+  const rows = [["Etapa","Item"]];
+  const add = (etapa, arr) => (arr||[]).forEach(x=>rows.push([etapa, x]));
+  add("Insumo", d.insumos); add("Atividade", d.atividades); add("Produto", d.produtos); add("Resultado", d.resultados);
+  rows.push(["Impacto", d.impacto]);
+  const esc = s => '"' + String(s||"").replace(/"/g,'""') + '"';
+  return "\uFEFF" + rows.map(r=>r.map(esc).join(";")).join("\r\n");
+}
 
-function Elo({rotulo, itens, cor}){
+function EditList({label, cor, itens, onChange}){
+  function set(i,v){ const a=itens.slice(); a[i]=v; onChange(a); }
+  function del(i){ const a=itens.slice(); a.splice(i,1); onChange(a); }
+  function add(){ onChange((itens||[]).concat([""])); }
   return (
-    <div style={{ background:"#fff", border:"1px solid #e4ded2", borderLeft:`5px solid ${cor}`, borderRadius:11, padding:"13px 16px" }}>
-      <div className="ebr-mono" style={{ fontSize:10, color:cor, marginBottom:7 }}>{rotulo}</div>
-      <ul style={{ margin:0, paddingLeft:18, fontSize:14.5, lineHeight:1.5 }}>{(itens||[]).map((t,i)=><li key={i} style={{ marginBottom:4 }}>{t}</li>)}</ul>
+    <div>
+      <div className="ebr-mono" style={{ fontSize:10, color:cor, marginBottom:7 }}>{label}</div>
+      {(itens||[]).map((t,i)=>(
+        <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:4 }}>
+          <span style={{ color:cor, marginTop:7 }}>•</span>
+          <input className="ebr-inp" value={t} onChange={e=>set(i,e.target.value)} />
+          <button className="ebr-del no-print" title="remover" onClick={()=>del(i)}>×</button>
+        </div>
+      ))}
+      <button className="ebr-add no-print" onClick={add}>+ adicionar</button>
     </div>
   );
 }
 function Seta(){ return <div style={{ textAlign:"center", color:"#bdb7a8", fontSize:18, lineHeight:1, margin:"2px 0" }}>↓</div>; }
-function renderResult(res){
-  const c = res.cadeia || {};
-  return (<div>
-    <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
-    <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 24px", fontWeight:500 }}>{res.problema}</p>
-    {res.causas && res.causas.length>0 && (
-      <div style={{ background:"#fff", border:"1px solid #e4ded2", borderLeft:`5px solid ${C.rust}`, borderRadius:11, padding:"14px 16px", marginBottom:22 }}>
-        <div className="ebr-mono" style={{ fontSize:10, color:C.rust, marginBottom:8 }}>Diagnóstico · causas prováveis</div>
-        <ul style={{ margin:0, paddingLeft:18, fontSize:14.5, lineHeight:1.5 }}>{res.causas.map((t,i)=><li key={i} style={{ marginBottom:5 }}>{t}</li>)}</ul>
-      </div>
-    )}
-    <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:4 }}>Cadeia da teoria de mudança</div>
-    <div style={{ fontSize:12.5, color:"#8a8576", marginBottom:14 }}>Elementos para você montar a sua — insumos → atividades → produtos → resultados → impacto.</div>
-    <Elo rotulo="Insumos" itens={c.insumos} cor={C.navy} /><Seta/>
-    <Elo rotulo="Atividades" itens={c.atividades} cor={C.amber} /><Seta/>
-    <Elo rotulo="Produtos" itens={c.produtos} cor={C.blue} /><Seta/>
-    <Elo rotulo="Resultados" itens={c.resultados} cor={C.green} /><Seta/>
-    <div style={{ background:C.navy, color:"#fff", borderRadius:11, padding:"15px 18px" }}>
-      <div className="ebr-mono" style={{ fontSize:10, color:C.green, marginBottom:6 }}>Impacto de longo prazo</div>
-      <div style={{ fontSize:16, lineHeight:1.45 }}>{c.impacto}</div>
+function Elo({label, cor, itens, onChange}){
+  return (
+    <div style={{ background:"#fff", border:"1px solid #e4ded2", borderLeft:`5px solid ${cor}`, borderRadius:11, padding:"13px 16px" }}>
+      <EditList label={label} cor={cor} itens={itens} onChange={onChange} />
     </div>
-    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginTop:18 }}>
-      <div style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:11, padding:"14px 16px" }}>
-        <div className="ebr-mono" style={{ fontSize:10, color:C.blue, marginBottom:8 }}>Premissas críticas</div>
-        <ul style={{ margin:0, paddingLeft:18, fontSize:13.5, lineHeight:1.5 }}>{(res.premissas||[]).map((t,i)=><li key={i} style={{ marginBottom:5 }}>{t}</li>)}</ul>
-      </div>
-      <div style={{ background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:11, padding:"14px 16px" }}>
-        <div className="ebr-mono" style={{ fontSize:10, color:C.rust, marginBottom:8 }}>Riscos</div>
-        <ul style={{ margin:0, paddingLeft:18, fontSize:13.5, lineHeight:1.5 }}>{(res.riscos||[]).map((t,i)=><li key={i} style={{ marginBottom:5 }}>{t}</li>)}</ul>
-      </div>
-    </div>
-    {res.avaliacao && <NavyBox rotulo="Desenho avaliativo sugerido"><strong style={{ color:"#fff" }}>{res.avaliacao.desenho}.</strong> {res.avaliacao.justificativa}</NavyBox>}
-    <Fontes fontes={res.fontes} />
-    <p style={{ marginTop:24, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>Estes são <strong>elementos para construção</strong>, não uma teoria de mudança pronta. Use como ponto de partida para a equipe montar e validar a sua.</p>
-  </div>);
+  );
 }
-
 
 function App(){
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
-  const [res, setRes] = useState(null);
+  const [doc, setDoc] = useState(null);
   const [err, setErr] = useState(null);
+  const [copiado, setCopiado] = useState(false);
+
   async function run(p){
     const texto = (p ?? q).trim();
     if(!texto || loading) return;
-    setQ(texto); setLoading(true); setErr(null); setRes(null);
-    try{ setRes(await ask(texto)); }
-    catch(e){ setErr("Não consegui processar. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
+    setQ(texto); setLoading(true); setErr(null); setDoc(null);
+    try{ setDoc(aoDoc(await ask(texto))); }
+    catch(e){ setErr("Não consegui levantar os elementos. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
     finally{ setLoading(false); }
   }
+  function upd(campo, valor){ setDoc(d=>({ ...d, [campo]:valor })); }
+
+  function copiarMd(){
+    navigator.clipboard.writeText(toMarkdown(doc)).then(()=>{ setCopiado(true); setTimeout(()=>setCopiado(false), 2000); });
+  }
+
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", color:C.ink, background:C.paper, minHeight:"100vh" }}>
       <header style={{ background:C.navy, color:"#fff", padding:"30px 28px 34px", position:"relative", overflow:"hidden" }}>
@@ -167,26 +188,33 @@ function App(){
         <div style={{ maxWidth:920, margin:"0 auto", position:"relative" }}>
           <a href="../" className="no-print ebr-mono" style={{ fontSize:10, color:C.blue, textDecoration:"none", display:"inline-block", marginBottom:12 }}>← Portal dos protótipos</a>
           <div className="ebr-mono" style={{ fontSize:11, color:C.blue, marginBottom:14 }}>CLEAR Lab · Protótipo F · Camada 03 — Propor · PILOTO</div>
-          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>Auxiliar de <span style={{ fontStyle:"italic", color:C.blue }}>Teoria de Mudança</span></h1>
-          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>Descreva o problema ou a ideia de programa. O sistema levanta as causas prováveis e sugere os elementos da cadeia — insumos, atividades, produtos, resultados, impacto — com premissas, riscos e desenho avaliativo. São elementos para você construir a sua ToC, não uma versão pronta.</p>
+          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>
+            Auxiliar de <span style={{ fontStyle:"italic", color:C.blue }}>Teoria de Mudança</span>
+          </h1>
+          <p style={{ maxWidth:600, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>
+            Descreva o problema ou a ideia de programa. O sistema levanta os elementos — causas, cadeia, premissas, riscos, desenho avaliativo — que você <strong>edita e exporta</strong>. São elementos para construir a sua ToC, não uma versão pronta.
+          </p>
         </div>
       </header>
+
       <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
-        
         <div className="no-print" style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
           <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Problema ou ideia de programa</label>
-          <textarea value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
-            placeholder="Ex.: criar um programa de busca ativa para reduzir a evasão escolar" rows={3}
+          <textarea value={q} onChange={e=>setQ(e.target.value)}
+            onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
+            placeholder="Ex.: criar um programa de busca ativa para reduzir a evasão escolar"
+            rows={3}
             style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
             <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
             <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
               style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
-              {loading ? "Processando…" : "Levantar elementos"}
+              {loading ? "Levantando…" : "Levantar elementos"}
             </button>
           </div>
         </div>
-        {!res && !loading && (
+
+        {!doc && !loading && (
           <div className="no-print" style={{ marginTop:16 }}>
             <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
@@ -194,14 +222,72 @@ function App(){
             </div>
           </div>
         )}
+
         {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Levantando causas e elementos da cadeia…</span></div>)}
         {err && (<div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>{err}</div>)}
-        {res && (<div className="ebr-rise" style={{ marginTop:26 }}>
-          <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
-            <button className="ebr-btn" onClick={()=>window.print()} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 14px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>Imprimir / PDF</button>
+
+        {doc && (
+          <div className="ebr-rise" style={{ marginTop:26 }}>
+            {/* barra de ações */}
+            <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", gap:8, marginBottom:18, flexWrap:"wrap" }}>
+              {[["Imprimir / PDF",()=>window.print()],[copiado?"Copiado ✓":"Copiar (markdown)",copiarMd],["Baixar Word",()=>download("teoria-de-mudanca.doc", toDocHtml(doc), "application/msword")],["Baixar CSV",()=>download("cadeia-teoria-mudanca.csv", toCsv(doc), "text/csv;charset=utf-8")]].map(([txt,fn],i)=>(
+                <button key={i} className="ebr-btn" onClick={fn} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 13px", fontSize:12.5, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>{txt}</button>
+              ))}
+            </div>
+            <div className="ebr-mono no-print" style={{ fontSize:9.5, color:"#a8a292", marginBottom:14, textAlign:"right" }}>Tudo abaixo é editável — clique para ajustar</div>
+
+            <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:6 }}>O problema</div>
+            <textarea className="ebr-serif" value={doc.problema} onChange={e=>upd("problema",e.target.value)}
+              style={{ width:"100%", border:"1px solid transparent", borderRadius:8, padding:"6px 8px", fontSize:22, lineHeight:1.35, fontWeight:500, resize:"vertical", color:C.ink, background:"transparent" }}
+              onFocus={e=>e.target.style.background="#fff"} onBlur={e=>e.target.style.background="transparent"} rows={2} />
+
+            <div style={{ marginTop:18, background:"#fff", border:"1px solid #e4ded2", borderLeft:`5px solid ${C.rust}`, borderRadius:11, padding:"14px 16px", marginBottom:22 }}>
+              <EditList label="Diagnóstico · causas prováveis" cor={C.rust} itens={doc.causas} onChange={v=>upd("causas",v)} />
+            </div>
+
+            <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:4 }}>Cadeia da teoria de mudança</div>
+            <div style={{ fontSize:12.5, color:"#8a8576", marginBottom:14 }}>Insumos → atividades → produtos → resultados → impacto.</div>
+            <Elo label="Insumos" cor={C.navy} itens={doc.insumos} onChange={v=>upd("insumos",v)} /><Seta/>
+            <Elo label="Atividades" cor={C.amber} itens={doc.atividades} onChange={v=>upd("atividades",v)} /><Seta/>
+            <Elo label="Produtos" cor={C.blue} itens={doc.produtos} onChange={v=>upd("produtos",v)} /><Seta/>
+            <Elo label="Resultados" cor={C.green} itens={doc.resultados} onChange={v=>upd("resultados",v)} /><Seta/>
+            <div style={{ background:C.navy, color:"#fff", borderRadius:11, padding:"15px 18px" }}>
+              <div className="ebr-mono" style={{ fontSize:10, color:C.green, marginBottom:6 }}>Impacto de longo prazo</div>
+              <textarea value={doc.impacto} onChange={e=>upd("impacto",e.target.value)} rows={2}
+                style={{ width:"100%", border:"1px solid rgba(255,255,255,.2)", background:"rgba(255,255,255,.06)", borderRadius:8, padding:"7px 9px", fontSize:16, lineHeight:1.45, color:"#fff", resize:"vertical" }} />
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginTop:18 }}>
+              <div style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:11, padding:"14px 16px" }}>
+                <EditList label="Premissas críticas" cor={C.blue} itens={doc.premissas} onChange={v=>upd("premissas",v)} />
+              </div>
+              <div style={{ background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:11, padding:"14px 16px" }}>
+                <EditList label="Riscos" cor={C.rust} itens={doc.riscos} onChange={v=>upd("riscos",v)} />
+              </div>
+            </div>
+
+            <div style={{ marginTop:18, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
+              <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>Desenho avaliativo sugerido</div>
+              <input value={doc.desenho} onChange={e=>upd("desenho",e.target.value)} placeholder="Ex.: DiD"
+                style={{ width:"100%", border:"1px solid rgba(255,255,255,.2)", background:"rgba(255,255,255,.06)", borderRadius:7, padding:"7px 9px", fontSize:15, fontWeight:700, color:"#fff", marginBottom:8 }} />
+              <textarea value={doc.justificativa} onChange={e=>upd("justificativa",e.target.value)} rows={2}
+                style={{ width:"100%", border:"1px solid rgba(255,255,255,.2)", background:"rgba(255,255,255,.06)", borderRadius:7, padding:"7px 9px", fontSize:14, lineHeight:1.55, color:"rgba(255,255,255,.9)", resize:"vertical" }} />
+            </div>
+
+            {doc.fontes && doc.fontes.length>0 && (
+              <div className="ebr-fontes" style={{ marginTop:24 }}>
+                <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:7 }}>Fontes consultadas</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                  {doc.fontes.map((f,i)=>(<a key={i} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize:11.5, color:"#8a8576", textDecoration:"none", lineHeight:1.45 }}>· {f.titulo} ↗</a>))}
+                </div>
+              </div>
+            )}
+
+            <p style={{ marginTop:24, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>
+              Estes são <strong>elementos para construção</strong>, não uma teoria de mudança pronta. Edite, descarte e complemente com a equipe — e exporte para continuar o trabalho.
+            </p>
           </div>
-          {renderResult(res)}
-        </div>)}
+        )}
       </main>
     </div>
   );
