@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EvidênciaBR Express — CLEAR Lab (piloto)</title>
-<meta name="description" content="Síntese de evidência sob demanda para gestores públicos municipais. Piloto interno CLEAR Lab." />
+<meta name="description" content="Evidência-expressa para gestores municipais, no método REA do CLEAR. Piloto interno." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -25,8 +25,11 @@
   @keyframes ebrup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   .ebr-rise{animation:ebrup .5s ease both;}
   a{ color:#01354A; }
-  textarea{ font-family:'DM Sans',sans-serif; }
+  textarea, select{ font-family:'DM Sans',sans-serif; }
   .ebr-fontes a:hover{ color:#01354A; text-decoration:underline; }
+  table{ border-collapse:collapse; width:100%; }
+  th,td{ text-align:left; padding:8px 10px; font-size:12.5px; border-bottom:1px solid #e4ded2; vertical-align:top; }
+  th{ font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:#8a8576; }
   @media print {
     .no-print{ display:none !important; }
     html,body{ background:#fff !important; }
@@ -37,17 +40,21 @@
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 const { useState } = React;
-
-/* ============================================================================
-   EvidênciaBR Express — PILOTO (motor: Gemini via Cloudflare Worker)
-   A chave Gemini fica no Worker (secret), não aqui. Ninguém precisa configurar.
-
-   >>> COLE AQUI A URL DO SEU WORKER <<<
-   ========================================================================== */
 const WORKER_URL = "https://evidencia-br.caiodesouzacastro28.workers.dev";
+
+const AREAS = [
+  { v:"", label:"Selecione a área…" },
+  { v:"educacao", label:"Educação" },
+  { v:"saude", label:"Saúde" },
+  { v:"seguranca", label:"Segurança pública" },
+  { v:"assistencia", label:"Assistência social" },
+  { v:"trabalho", label:"Trabalho e renda" },
+  { v:"clima", label:"Clima e meio ambiente" },
+  { v:"urbano", label:"Urbano, habitação e mobilidade" },
+  { v:"outra", label:"Outra / não sei (o sistema infere)" },
+];
 
 function parseJSON(text){
   let t = (text||"").replace(/```json|```/g, "").trim();
@@ -55,25 +62,19 @@ function parseJSON(text){
   if (s !== -1 && e !== -1) t = t.slice(s, e+1);
   return JSON.parse(t);
 }
-
-async function synthesizeEvidence(question){
-  const r = await fetch(WORKER_URL, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ question })
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error.message || "Erro na API");
-  const cand = j.candidates && j.candidates[0];
+async function ask(produto, question, area){
+  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ produto, question, area }) });
+  const json = await r.json();
+  if (json.error) throw new Error(json.error.message || "Erro na API");
+  const cand = json.candidates && json.candidates[0];
   const txt = (cand?.content?.parts || []).map(p=>p.text).filter(Boolean).join("");
   const parsed = parseJSON(txt);
   const chunks = cand?.groundingMetadata?.groundingChunks || [];
   const grounded = chunks.map(c=>({ titulo:c.web?.title||c.web?.uri, url:c.web?.uri })).filter(x=>x.url);
-  if (grounded.length) parsed.fontes = grounded;
+  if (grounded.length && (!parsed.fontes || !parsed.fontes.length)) parsed.fontes = grounded;
   return parsed;
 }
 
-/* ============================ DESIGN MICHEL ============================ */
 const C = { navy:"#01354A", navy2:"#012030", blue:"#08B0EE", green:"#98C43B", paper:"#F7F5EF", ink:"#1A1A1C", amber:"#E0992E", rust:"#C2572E" };
 const NIVEL = {
   A:{cor:C.green,rotulo:"Forte",desc:"Revisões sistemáticas / múltiplos ECRs"},
@@ -88,22 +89,104 @@ const EXEMPLOS = [
   "Como aumentar a adesão à creche em territórios vulneráveis?",
 ];
 
+function Fontes({fontes}){
+  if(!fontes || !fontes.length) return null;
+  return (
+    <div className="ebr-fontes" style={{ marginTop:24 }}>
+      <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:7 }}>Fontes consultadas</div>
+      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+        {fontes.map((f,i)=>(<a key={i} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize:11.5, color:"#8a8576", textDecoration:"none", lineHeight:1.45 }}>· {f.titulo} ↗</a>))}
+      </div>
+    </div>
+  );
+}
+
+function PICO({pico}){
+  if(!pico) return null;
+  const its = [["População",pico.populacao],["Intervenção",pico.intervencao],["Comparador",pico.comparador],["Resultado",pico.outcome]];
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, margin:"0 0 24px" }}>
+      {its.map(([k,v],i)=>(
+        <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:10, padding:"10px 13px" }}>
+          <div className="ebr-mono" style={{ fontSize:9, color:C.blue, marginBottom:4 }}>{k}</div>
+          <div style={{ fontSize:13.5, lineHeight:1.4 }}>{v || "—"}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------- modo PESQUISADOR (lista de candidatos) ----------
+function Pesquisador({data}){
+  return (
+    <div className="ebr-rise" style={{ marginTop:18, background:"#fbf9f4", border:`1px dashed ${C.navy}`, borderRadius:13, padding:"18px 20px" }}>
+      <div className="ebr-mono" style={{ fontSize:10, color:C.navy, marginBottom:10 }}>Modo pesquisador · candidatos para verificação (etapa 1 do protocolo)</div>
+      {data.bases && data.bases.length>0 && (
+        <p style={{ fontSize:12.5, color:"#6b6757", margin:"0 0 12px" }}>
+          <strong style={{ color:C.navy }}>Bases priorizadas: </strong>
+          {data.bases.map(b=>b.nome).join(" · ")}
+        </p>
+      )}
+      <div style={{ overflowX:"auto" }}>
+        <table>
+          <thead><tr><th>Autores</th><th>Ano</th><th>Título</th><th>Periódico</th><th>DOI</th><th>Base</th></tr></thead>
+          <tbody>
+            {(data.candidatos||[]).map((c,i)=>{
+              const flag = (c.flag||"").toLowerCase()==="verificar";
+              return (
+                <tr key={i} style={{ background: flag ? "#fff7ea" : "transparent" }}>
+                  <td>{c.autores}</td>
+                  <td>{c.ano}</td>
+                  <td>{c.titulo} {flag && <span style={{ color:C.amber, fontWeight:700 }}>[verificar]</span>}</td>
+                  <td>{c.periodico}</td>
+                  <td>{c.doi ? <a href={"https://doi.org/"+c.doi} target="_blank" rel="noreferrer">{c.doi}</a> : <span style={{ color:"#b8b2a3" }}>—</span>}</td>
+                  <td>{c.base}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {data.verificacao && data.verificacao.length>0 && (
+        <div style={{ marginTop:16 }}>
+          <div className="ebr-mono" style={{ fontSize:10, color:C.rust, marginBottom:8 }}>Verificação humana — obrigatória (etapa 2)</div>
+          <ol style={{ margin:0, paddingLeft:20, fontSize:13, lineHeight:1.55, color:"#5a5648" }}>
+            {data.verificacao.map((v,i)=><li key={i} style={{ marginBottom:4 }}>{v}</li>)}
+          </ol>
+        </div>
+      )}
+      <p style={{ marginTop:14, fontSize:11.5, color:"#8a8576", lineHeight:1.5 }}>
+        Lista de candidatos gerada por IA — <strong>a IA pode alucinar referências</strong>. Confirme DOI, ano e abstract antes de usar. A IA aumenta o processo, não substitui.
+      </p>
+    </div>
+  );
+}
+
 function App(){
   const [q, setQ] = useState("");
+  const [area, setArea] = useState("");
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState(null);
   const [err, setErr] = useState(null);
+  // modo pesquisador
+  const [pLoading, setPLoading] = useState(false);
+  const [pRes, setPRes] = useState(null);
+  const [pErr, setPErr] = useState(null);
 
-  async function run(pergunta){
-    const texto = (pergunta ?? q).trim();
+  async function run(p){
+    const texto = (p ?? q).trim();
     if(!texto || loading) return;
-    setQ(texto); setLoading(true); setErr(null); setRes(null);
-    try{
-      const out = await synthesizeEvidence(texto);
-      setRes(out);
-    }catch(e){
-      setErr("Não consegui montar a síntese. Verifique se o Worker está no ar e a chave configurada, ou reformule a pergunta. (" + (e.message||"") + ")");
-    }finally{ setLoading(false); }
+    setQ(texto); setLoading(true); setErr(null); setRes(null); setPRes(null); setPErr(null);
+    try{ setRes(await ask("evidencia", texto, area)); }
+    catch(e){ setErr("Não consegui montar a síntese. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
+    finally{ setLoading(false); }
+  }
+  async function verCandidatos(){
+    if(pLoading) return;
+    setPLoading(true); setPErr(null); setPRes(null);
+    try{ setPRes(await ask("evidencia_busca", q, area)); }
+    catch(e){ setPErr("Não consegui montar a lista de candidatos. (" + (e.message||"") + ")"); }
+    finally{ setPLoading(false); }
   }
 
   return (
@@ -117,9 +200,8 @@ function App(){
           <h1 className="ebr-serif" style={{ fontSize:46, lineHeight:1.05, margin:0, fontWeight:600 }}>
             Evidência<span style={{ fontStyle:"italic", color:C.blue }}>BR</span> Express
           </h1>
-          <p style={{ maxWidth:560, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>
-            Faça uma pergunta de política pública. O sistema busca evidência real, organiza opções e classifica
-            cada uma por nível — no padrão da Diretriz Metodológica do Ministério da Saúde.
+          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>
+            Evidência-expressa no método REA do CLEAR: pergunta estruturada, hierarquia de fontes e classificação por nível. Não substitui revisão completa nem leitura humana.
           </p>
         </div>
       </header>
@@ -133,7 +215,10 @@ function App(){
             rows={3}
             style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
-            <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
+            <select value={area} onChange={e=>setArea(e.target.value)}
+              style={{ border:"1px solid #e4ded2", borderRadius:9, padding:"9px 12px", fontSize:13.5, color:C.navy, background:"#fff" }}>
+              {AREAS.map(a=><option key={a.v} value={a.v}>{a.label}</option>)}
+            </select>
             <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
               style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
               {loading ? "Sintetizando…" : "Sintetizar evidência"}
@@ -145,34 +230,23 @@ function App(){
           <div className="no-print" style={{ marginTop:16 }}>
             <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {EXEMPLOS.map(ex=>(
-                <button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)}
-                  style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>
-                  {ex}
-                </button>
-              ))}
+              {EXEMPLOS.map(ex=>(<button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>{ex}</button>))}
             </div>
           </div>
         )}
 
-        {loading && (
-          <div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}>
-            <span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} />
-            <span style={{ fontSize:14.5 }}>Buscando evidência real e avaliando níveis…</span>
-          </div>
-        )}
-
-        {err && (
-          <div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>
-            {err}
-          </div>
-        )}
+        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Estruturando a pergunta e avaliando a evidência…</span></div>)}
+        {err && (<div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>{err}</div>)}
 
         {res && (
           <div className="ebr-rise" style={{ marginTop:26 }}>
             <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
               <button className="ebr-btn" onClick={()=>window.print()} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 14px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>Imprimir / PDF</button>
             </div>
+
+            <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>Pergunta estruturada (PICO)</div>
+            <PICO pico={res.pico} />
+
             <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
             <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 28px", fontWeight:500 }}>{res.problema}</p>
 
@@ -184,17 +258,11 @@ function App(){
                   <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"18px 20px", borderLeft:`5px solid ${n.cor}` }}>
                     <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
                       <h3 className="ebr-serif" style={{ fontSize:19.5, margin:0, fontWeight:600, color:C.navy }}>{o.titulo}</h3>
-                      <span title={n.desc} style={{ background:n.cor, color:(o.nivel==="A"||o.nivel==="C")?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>
-                        Nível {o.nivel} · {n.rotulo}
-                      </span>
+                      <span title={n.desc} style={{ background:n.cor, color:(o.nivel==="A"||o.nivel==="C")?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>Nível {o.nivel} · {n.rotulo}</span>
                     </div>
                     {o.mecanismo && <p style={{ margin:"9px 0 0", fontSize:14, color:"#6b6757", fontStyle:"italic" }}>{o.mecanismo}</p>}
                     <p style={{ margin:"11px 0 0", fontSize:15, lineHeight:1.58 }}>{o.evidencia}</p>
-                    {o.transferibilidade && (
-                      <div style={{ marginTop:12, padding:"9px 12px", background:C.paper, borderRadius:8, fontSize:13, color:"#5a5648" }}>
-                        <strong style={{ color:C.navy }}>Transferibilidade · </strong>{o.transferibilidade}
-                      </div>
-                    )}
+                    {o.transferibilidade && (<div style={{ marginTop:12, padding:"9px 12px", background:C.paper, borderRadius:8, fontSize:13, color:"#5a5648" }}><strong style={{ color:C.navy }}>Transferibilidade · </strong>{o.transferibilidade}</div>)}
                   </div>
                 );
               })}
@@ -202,38 +270,33 @@ function App(){
 
             {res.limitacoes && (
               <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
-                <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>Limitações desta síntese</div>
+                <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>Limitações desta evidência-expressa</div>
                 <p style={{ margin:0, fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.85)" }}>{res.limitacoes}</p>
               </div>
             )}
 
-            {res.fontes && res.fontes.length>0 && (
-              <div className="ebr-fontes" style={{ marginTop:24 }}>
-                <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:7 }}>Fontes consultadas</div>
-                <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                  {res.fontes.map((f,i)=>(
-                    <a key={i} href={f.url} target="_blank" rel="noreferrer"
-                      style={{ fontSize:11.5, color:"#8a8576", textDecoration:"none", lineHeight:1.45 }}>
-                      · {f.titulo} ↗
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Fontes fontes={res.fontes} />
 
+            {/* botão modo pesquisador */}
+            <div className="no-print" style={{ marginTop:22 }}>
+              {!pRes && (
+                <button className="ebr-btn" onClick={verCandidatos} disabled={pLoading}
+                  style={{ background:"transparent", border:`1px solid ${C.blue}`, color:C.navy, borderRadius:9, padding:"9px 16px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>
+                  {pLoading ? "Buscando candidatos…" : "Ver fontes-candidatas (modo pesquisador) ↓"}
+                </button>
+              )}
+              {pErr && <div style={{ marginTop:12, padding:12, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13 }}>{pErr}</div>}
+            </div>
+            {pRes && <Pesquisador data={pRes} />}
+
+            {/* legenda + disclaimer */}
             <div style={{ marginTop:28, paddingTop:20, borderTop:"1px solid #e4ded2" }}>
-              <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:10 }}>Escala de evidência (padrão Diretriz/MS)</div>
+              <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:10 }}>Escala de evidência (padrão CLEAR / Diretriz-MS)</div>
               <div style={{ display:"flex", flexWrap:"wrap", gap:14 }}>
-                {Object.entries(NIVEL).map(([k,v])=>(
-                  <div key={k} style={{ display:"flex", alignItems:"center", gap:7, fontSize:12, color:"#5a5648" }}>
-                    <span style={{ width:12, height:12, borderRadius:3, background:v.cor }} />
-                    <strong>{k}</strong> · {v.desc}
-                  </div>
-                ))}
+                {Object.entries(NIVEL).map(([k,v])=>(<div key={k} style={{ display:"flex", alignItems:"center", gap:7, fontSize:12, color:"#5a5648" }}><span style={{ width:12, height:12, borderRadius:3, background:v.cor }} /><strong>{k}</strong> · {v.desc}</div>))}
               </div>
               <p style={{ marginTop:16, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>
-                Síntese rápida gerada por IA com busca ao vivo — <strong>não substitui revisão sistemática</strong>.
-                A IA organiza e classifica evidência; a decisão segue do gestor. Verifique sempre as fontes originais.
+                Evidência-expressa gerada por IA com busca ao vivo — <strong>não substitui uma REA nem revisão sistemática</strong>. A classificação é leitura rápida que aponta para fontes; a decisão e a validação seguem do gestor.
               </p>
             </div>
           </div>
@@ -242,7 +305,6 @@ function App(){
     </div>
   );
 }
-
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
