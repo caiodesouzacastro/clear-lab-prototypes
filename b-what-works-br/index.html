@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>What Works Brasil — CLEAR Lab (piloto)</title>
-<meta name="description" content="Casos de municípios que enfrentaram problemas parecidos e o que fizeram. Piloto interno CLEAR Lab." />
+<meta name="description" content="Casos de municípios comparáveis que enfrentaram o mesmo problema. Piloto interno CLEAR Lab." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -25,7 +25,7 @@
   @keyframes ebrup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   .ebr-rise{animation:ebrup .5s ease both;}
   a{ color:#01354A; }
-  textarea{ font-family:'DM Sans',sans-serif; }
+  textarea, select, input{ font-family:'DM Sans',sans-serif; }
   .ebr-fontes a:hover{ color:#01354A; text-decoration:underline; }
   @media print {
     .no-print{ display:none !important; }
@@ -40,7 +40,22 @@
 <script type="text/babel">
 const { useState } = React;
 const WORKER_URL = "https://evidencia-br.caiodesouzacastro28.workers.dev";
-const PRODUTO = "whatworks";
+
+const PORTES = [
+  { v:"", label:"Porte (opcional)" },
+  { v:"Até 20 mil habitantes", label:"Até 20 mil hab." },
+  { v:"20 a 100 mil habitantes", label:"20–100 mil hab." },
+  { v:"100 a 500 mil habitantes", label:"100–500 mil hab." },
+  { v:"Mais de 500 mil habitantes", label:"Mais de 500 mil hab." },
+];
+const REGIOES = [
+  { v:"", label:"Região (opcional)" },
+  { v:"Norte", label:"Norte" },
+  { v:"Nordeste", label:"Nordeste" },
+  { v:"Centro-Oeste", label:"Centro-Oeste" },
+  { v:"Sudeste", label:"Sudeste" },
+  { v:"Sul", label:"Sul" },
+];
 
 function parseJSON(text){
   let t = (text||"").replace(/```json|```/g, "").trim();
@@ -48,8 +63,8 @@ function parseJSON(text){
   if (s !== -1 && e !== -1) t = t.slice(s, e+1);
   return JSON.parse(t);
 }
-async function ask(question){
-  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ produto: PRODUTO, question }) });
+async function ask(payload){
+  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
   const json = await r.json();
   if (json.error) throw new Error(json.error.message || "Erro na API");
   const cand = json.candidates && json.candidates[0];
@@ -68,16 +83,14 @@ const NIVEL = {
   C:{cor:C.amber,rotulo:"Limitada",desc:"Estudos observacionais / séries de casos"},
   D:{cor:C.rust,rotulo:"Incipiente",desc:"Opinião de especialista / sem evidência robusta"},
 };
-const INTENS = { "Baixo":C.green, "Médio":C.amber, "Medio":C.amber, "Alto":C.rust };
-const EXEMPLOS = ["Alta evasão no ensino médio", "Filas longas na atenção primária", "Reincidência criminal juvenil", "Baixa adesão à creche em periferias"];
+const SEMEL = { "Alta":C.green, "Média":C.amber, "Media":C.amber, "Baixa":"#a8a292" };
+const EXEMPLOS = [
+  "Alta evasão no ensino médio",
+  "Filas longas na atenção primária",
+  "Reincidência criminal juvenil",
+  "Baixa adesão à creche em periferias",
+];
 
-function Selo({texto, cor, escuro}){
-  return <span style={{ background:cor, color:escuro?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>{texto}</span>;
-}
-function NivelSelo({nivel}){
-  const n = NIVEL[nivel] || NIVEL.D;
-  return <span title={n.desc}><Selo texto={"Nível "+nivel+" · "+n.rotulo} cor={n.cor} escuro={nivel==="A"||nivel==="C"} /></span>;
-}
 function Fontes({fontes}){
   if(!fontes || !fontes.length) return null;
   return (
@@ -89,55 +102,25 @@ function Fontes({fontes}){
     </div>
   );
 }
-function NavyBox({rotulo, children}){
-  return (
-    <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
-      <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>{rotulo}</div>
-      <div style={{ fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.88)" }}>{children}</div>
-    </div>
-  );
-}
-
-
-function renderResult(res){
-  return (<div>
-    <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
-    <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 28px", fontWeight:500 }}>{res.problema}</p>
-    <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:12 }}>Quem, parecido com você, enfrentou isso</div>
-    <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-      {(res.casos||[]).map((o,i)=>(
-        <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"18px 20px", borderLeft:`5px solid ${(NIVEL[o.nivel]||NIVEL.D).cor}` }}>
-          <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
-            <h3 className="ebr-serif" style={{ fontSize:19, margin:0, fontWeight:600, color:C.navy }}>{o.local}</h3>
-            <NivelSelo nivel={o.nivel} />
-          </div>
-          {o.contexto && <p style={{ margin:"8px 0 0", fontSize:13, color:"#8a8576", fontStyle:"italic" }}>{o.contexto}</p>}
-          {o.oque_fez && <p style={{ margin:"11px 0 0", fontSize:15, lineHeight:1.55 }}><strong style={{ color:C.navy }}>Fez · </strong>{o.oque_fez}</p>}
-          {o.resultado && <p style={{ margin:"8px 0 0", fontSize:15, lineHeight:1.55 }}><strong style={{ color:C.navy }}>Resultado · </strong>{o.resultado}</p>}
-          {o.transferibilidade && <div style={{ marginTop:12, padding:"9px 12px", background:C.paper, borderRadius:8, fontSize:13, color:"#5a5648" }}><strong style={{ color:C.navy }}>Para o seu caso · </strong>{o.transferibilidade}</div>}
-        </div>
-      ))}
-    </div>
-    {res.consideracoes && <NavyBox rotulo="Como interpretar">{res.consideracoes}</NavyBox>}
-    <Fontes fontes={res.fontes} />
-    <p style={{ marginTop:24, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>Casos análogos encontrados por IA — <strong>semelhança é aproximada e correlação não é causa</strong>. Use como inspiração, não como prova de que funcionaria igual.</p>
-  </div>);
-}
-
 
 function App(){
   const [q, setQ] = useState("");
+  const [municipio, setMunicipio] = useState("");
+  const [porte, setPorte] = useState("");
+  const [regiao, setRegiao] = useState("");
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState(null);
   const [err, setErr] = useState(null);
+
   async function run(p){
     const texto = (p ?? q).trim();
     if(!texto || loading) return;
     setQ(texto); setLoading(true); setErr(null); setRes(null);
-    try{ setRes(await ask(texto)); }
-    catch(e){ setErr("Não consegui processar. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
+    try{ setRes(await ask({ produto:"whatworks", question:texto, municipio, porte, regiao })); }
+    catch(e){ setErr("Não consegui buscar os casos. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
     finally{ setLoading(false); }
   }
+
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif", color:C.ink, background:C.paper, minHeight:"100vh" }}>
       <header style={{ background:C.navy, color:"#fff", padding:"30px 28px 34px", position:"relative", overflow:"hidden" }}>
@@ -146,25 +129,44 @@ function App(){
         <div style={{ maxWidth:920, margin:"0 auto", position:"relative" }}>
           <a href="../" className="no-print ebr-mono" style={{ fontSize:10, color:C.blue, textDecoration:"none", display:"inline-block", marginBottom:12 }}>← Portal dos protótipos</a>
           <div className="ebr-mono" style={{ fontSize:11, color:C.blue, marginBottom:14 }}>CLEAR Lab · Protótipo B · Camada 02 — Sintetizar · PILOTO</div>
-          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>What Works <span style={{ fontStyle:"italic", color:C.blue }}>Brasil</span></h1>
-          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>Descreva seu problema. O sistema busca municípios que enfrentaram algo parecido e o que eles fizeram. Casos análogos para inspiração — não pareamento estatístico.</p>
+          <h1 className="ebr-serif" style={{ fontSize:46, lineHeight:1.05, margin:0, fontWeight:600 }}>
+            What Works <span style={{ fontStyle:"italic", color:C.blue }}>Brasil</span>
+          </h1>
+          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>
+            Descreva seu problema e, se quiser, o perfil do seu município. O sistema busca municípios comparáveis que enfrentaram algo parecido e o que fizeram. Casos análogos para inspiração — não pareamento estatístico.
+          </p>
         </div>
       </header>
+
       <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
-        
         <div className="no-print" style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
           <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Seu problema de política</label>
-          <textarea value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
-            placeholder="Ex.: nossa rede municipal tem alta evasão no ensino médio" rows={3}
+          <textarea value={q} onChange={e=>setQ(e.target.value)}
+            onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
+            placeholder="Ex.: nossa rede municipal tem alta evasão no ensino médio"
+            rows={2}
             style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
-            <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
+          <div style={{ borderTop:"1px solid #efe9dd", marginTop:10, paddingTop:12 }}>
+            <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:8 }}>Seu município (opcional — melhora a comparação)</div>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
+              <input value={municipio} onChange={e=>setMunicipio(e.target.value)} placeholder="Nome (ex.: Sobral-CE)"
+                style={{ flex:"1 1 180px", minWidth:150, border:"1px solid #e4ded2", borderRadius:9, padding:"9px 12px", fontSize:13.5, color:C.ink }} />
+              <select value={porte} onChange={e=>setPorte(e.target.value)} style={{ border:"1px solid #e4ded2", borderRadius:9, padding:"9px 12px", fontSize:13.5, color:C.navy, background:"#fff" }}>
+                {PORTES.map(p=><option key={p.v} value={p.v}>{p.label}</option>)}
+              </select>
+              <select value={regiao} onChange={e=>setRegiao(e.target.value)} style={{ border:"1px solid #e4ded2", borderRadius:9, padding:"9px 12px", fontSize:13.5, color:C.navy, background:"#fff" }}>
+                {REGIOES.map(r=><option key={r.v} value={r.v}>{r.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginTop:14 }}>
             <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
               style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
-              {loading ? "Processando…" : "Buscar casos"}
+              {loading ? "Buscando…" : "Buscar casos"}
             </button>
           </div>
         </div>
+
         {!res && !loading && (
           <div className="no-print" style={{ marginTop:16 }}>
             <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
@@ -173,14 +175,65 @@ function App(){
             </div>
           </div>
         )}
-        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Buscando casos análogos…</span></div>)}
+
+        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Buscando municípios comparáveis…</span></div>)}
         {err && (<div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>{err}</div>)}
-        {res && (<div className="ebr-rise" style={{ marginTop:26 }}>
-          <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
-            <button className="ebr-btn" onClick={()=>window.print()} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 14px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>Imprimir / PDF</button>
+
+        {res && (
+          <div className="ebr-rise" style={{ marginTop:26 }}>
+            <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
+              <button className="ebr-btn" onClick={()=>window.print()} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 14px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>Imprimir / PDF</button>
+            </div>
+
+            {res.perfil && (
+              <div style={{ background:"#eef6fb", border:`1px solid ${C.blue}`, borderRadius:11, padding:"12px 16px", marginBottom:20, fontSize:13.5, color:C.navy }}>
+                <strong className="ebr-mono" style={{ fontSize:9.5, letterSpacing:".1em" }}>Perfil considerado · </strong> {res.perfil}
+              </div>
+            )}
+
+            <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
+            <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 28px", fontWeight:500 }}>{res.problema}</p>
+
+            <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:12 }}>Municípios comparáveis · o que fizeram</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              {(res.casos||[]).map((o,i)=>{
+                const n = NIVEL[o.nivel] || NIVEL.D;
+                const sc = SEMEL[o.semelhanca] || "#a8a292";
+                return (
+                  <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"18px 20px", borderLeft:`5px solid ${sc}` }}>
+                    <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+                      <h3 className="ebr-serif" style={{ fontSize:19, margin:0, fontWeight:600, color:C.navy }}>{o.local}</h3>
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                        {o.semelhanca && <span style={{ background:sc, color:(o.semelhanca==="Baixa")?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>Semelhança {o.semelhanca}</span>}
+                        <span title={n.desc} style={{ background:n.cor, color:(o.nivel==="A"||o.nivel==="C")?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>Nível {o.nivel}</span>
+                      </div>
+                    </div>
+                    {o.contexto && <p style={{ margin:"8px 0 0", fontSize:13, color:"#8a8576", fontStyle:"italic" }}>{o.contexto}</p>}
+                    {o.base_semelhanca && <div style={{ marginTop:9, padding:"7px 11px", background:"#eef6fb", borderRadius:8, fontSize:12.5, color:C.navy }}><strong>Comparável porque · </strong>{o.base_semelhanca}</div>}
+                    {o.oque_fez && <p style={{ margin:"11px 0 0", fontSize:15, lineHeight:1.55 }}><strong style={{ color:C.navy }}>Fez · </strong>{o.oque_fez}</p>}
+                    {o.resultado && <p style={{ margin:"8px 0 0", fontSize:15, lineHeight:1.55 }}><strong style={{ color:C.navy }}>Resultado · </strong>{o.resultado}</p>}
+                    {o.transferibilidade && <div style={{ marginTop:12, padding:"9px 12px", background:C.paper, borderRadius:8, fontSize:13, color:"#5a5648" }}><strong style={{ color:C.navy }}>Para o seu caso · </strong>{o.transferibilidade}</div>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {res.consideracoes && (
+              <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
+                <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>Como interpretar</div>
+                <p style={{ margin:0, fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.85)" }}>{res.consideracoes}</p>
+              </div>
+            )}
+
+            <Fontes fontes={res.fontes} />
+
+            <div style={{ marginTop:24, paddingTop:18, borderTop:"1px solid #e4ded2" }}>
+              <p style={{ margin:0, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>
+                Casos análogos encontrados por IA — <strong>semelhança é aproximada e correlação não é causa</strong>. O grau de semelhança é um julgamento qualitativo, não pareamento estatístico. Use como inspiração, não como prova de que funcionaria igual.
+              </p>
+            </div>
           </div>
-          {renderResult(res)}
-        </div>)}
+        )}
       </main>
     </div>
   );
