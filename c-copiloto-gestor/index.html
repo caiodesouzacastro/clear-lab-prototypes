@@ -9,7 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
   :root{ color-scheme: light; }
   html,body{ margin:0; padding:0; background:#F7F5EF; }
@@ -37,144 +36,489 @@
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
-const { useState } = React;
+<script>
+const {
+  useState
+} = React;
 const WORKER_URL = "https://evidencia-br.caiodesouzacastro28.workers.dev";
 const PRODUTO = "copiloto";
-
-function parseJSON(text){
-  let t = (text||"").replace(/```json|```/g, "").trim();
-  const s = t.indexOf("{"), e = t.lastIndexOf("}");
-  if (s !== -1 && e !== -1) t = t.slice(s, e+1);
+function parseJSON(text) {
+  let t = (text || "").replace(/```json|```/g, "").trim();
+  const s = t.indexOf("{"),
+    e = t.lastIndexOf("}");
+  if (s !== -1 && e !== -1) t = t.slice(s, e + 1);
   return JSON.parse(t);
 }
-async function ask(question){
-  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ produto: PRODUTO, question }) });
+async function ask(question) {
+  const r = await fetch(WORKER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      produto: PRODUTO,
+      question
+    })
+  });
   const json = await r.json();
   if (json.error) throw new Error(json.error.message || "Erro na API");
   const cand = json.candidates && json.candidates[0];
-  const txt = (cand?.content?.parts || []).map(p=>p.text).filter(Boolean).join("");
+  const txt = (cand?.content?.parts || []).map(p => p.text).filter(Boolean).join("");
   const parsed = parseJSON(txt);
   const chunks = cand?.groundingMetadata?.groundingChunks || [];
-  const grounded = chunks.map(c=>({ titulo:c.web?.title||c.web?.uri, url:c.web?.uri })).filter(x=>x.url);
+  const grounded = chunks.map(c => ({
+    titulo: c.web?.title || c.web?.uri,
+    url: c.web?.uri
+  })).filter(x => x.url);
   if (grounded.length && (!parsed.fontes || !parsed.fontes.length)) parsed.fontes = grounded;
   return parsed;
 }
-
-const C = { navy:"#01354A", navy2:"#012030", blue:"#08B0EE", green:"#98C43B", paper:"#F7F5EF", ink:"#1A1A1C", amber:"#E0992E", rust:"#C2572E" };
-const NIVEL = {
-  A:{cor:C.green,rotulo:"Forte",desc:"Revisões sistemáticas / múltiplos ECRs"},
-  B:{cor:C.blue,rotulo:"Moderada",desc:"Estudo controlado ou quase-experimental"},
-  C:{cor:C.amber,rotulo:"Limitada",desc:"Estudos observacionais / séries de casos"},
-  D:{cor:C.rust,rotulo:"Incipiente",desc:"Opinião de especialista / sem evidência robusta"},
+const C = {
+  navy: "#01354A",
+  navy2: "#012030",
+  blue: "#08B0EE",
+  green: "#98C43B",
+  paper: "#F7F5EF",
+  ink: "#1A1A1C",
+  amber: "#E0992E",
+  rust: "#C2572E"
 };
-const INTENS = { "Baixo":C.green, "Médio":C.amber, "Medio":C.amber, "Alto":C.rust };
+const NIVEL = {
+  A: {
+    cor: C.green,
+    rotulo: "Forte",
+    desc: "Revisões sistemáticas / múltiplos ECRs"
+  },
+  B: {
+    cor: C.blue,
+    rotulo: "Moderada",
+    desc: "Estudo controlado ou quase-experimental"
+  },
+  C: {
+    cor: C.amber,
+    rotulo: "Limitada",
+    desc: "Estudos observacionais / séries de casos"
+  },
+  D: {
+    cor: C.rust,
+    rotulo: "Incipiente",
+    desc: "Opinião de especialista / sem evidência robusta"
+  }
+};
+const INTENS = {
+  "Baixo": C.green,
+  "Médio": C.amber,
+  "Medio": C.amber,
+  "Alto": C.rust
+};
 const EXEMPLOS = ["O que explica quedas na cobertura vacinal infantil?", "Como ler indicadores de evasão escolar?", "Que sinais antecedem aumento de filas na saúde?", "Como comparar meu gasto com municípios semelhantes?"];
-
-function Selo({texto, cor, escuro}){
-  return <span style={{ background:cor, color:escuro?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>{texto}</span>;
+function Selo({
+  texto,
+  cor,
+  escuro
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: cor,
+      color: escuro ? C.navy2 : "#fff",
+      borderRadius: 999,
+      padding: "3px 12px",
+      fontSize: 11.5,
+      fontWeight: 700,
+      whiteSpace: "nowrap"
+    }
+  }, texto);
 }
-function NivelSelo({nivel}){
+function NivelSelo({
+  nivel
+}) {
   const n = NIVEL[nivel] || NIVEL.D;
-  return <span title={n.desc}><Selo texto={"Nível "+nivel+" · "+n.rotulo} cor={n.cor} escuro={nivel==="A"||nivel==="C"} /></span>;
+  return /*#__PURE__*/React.createElement("span", {
+    title: n.desc
+  }, /*#__PURE__*/React.createElement(Selo, {
+    texto: "Nível " + nivel + " · " + n.rotulo,
+    cor: n.cor,
+    escuro: nivel === "A" || nivel === "C"
+  }));
 }
-function Fontes({fontes}){
-  if(!fontes || !fontes.length) return null;
-  return (
-    <div className="ebr-fontes" style={{ marginTop:24 }}>
-      <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:7 }}>Fontes consultadas</div>
-      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-        {fontes.map((f,i)=>(<a key={i} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize:11.5, color:"#8a8576", textDecoration:"none", lineHeight:1.45 }}>· {f.titulo} ↗</a>))}
-      </div>
-    </div>
-  );
+function Fontes({
+  fontes
+}) {
+  if (!fontes || !fontes.length) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "ebr-fontes",
+    style: {
+      marginTop: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 9.5,
+      color: "#a8a292",
+      marginBottom: 7
+    }
+  }, "Fontes consultadas"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 3
+    }
+  }, fontes.map((f, i) => /*#__PURE__*/React.createElement("a", {
+    key: i,
+    href: f.url,
+    target: "_blank",
+    rel: "noreferrer",
+    style: {
+      fontSize: 11.5,
+      color: "#8a8576",
+      textDecoration: "none",
+      lineHeight: 1.45
+    }
+  }, "· ", f.titulo, " ↗"))));
 }
-function NavyBox({rotulo, children}){
-  return (
-    <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
-      <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>{rotulo}</div>
-      <div style={{ fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.88)" }}>{children}</div>
-    </div>
-  );
+function NavyBox({
+  rotulo,
+  children
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 24,
+      background: C.navy,
+      color: "#fff",
+      borderRadius: 13,
+      padding: "18px 20px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10.5,
+      color: C.green,
+      marginBottom: 8
+    }
+  }, rotulo), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14.5,
+      lineHeight: 1.6,
+      color: "rgba(255,255,255,.88)"
+    }
+  }, children));
 }
-
-
-function renderResult(res){
-  return (<div>
-    <div style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"18px 20px", fontSize:15.5, lineHeight:1.62, whiteSpace:"pre-wrap" }}>{res.resposta}</div>
-    {res.como_verificar && res.como_verificar.length>0 && (
-      <div style={{ marginTop:18 }}>
-        <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:10 }}>Como verificar nos seus dados</div>
-        <ul style={{ margin:0, paddingLeft:20, fontSize:14.5, lineHeight:1.6 }}>{res.como_verificar.map((t,i)=><li key={i} style={{ marginBottom:6 }}>{t}</li>)}</ul>
-      </div>
-    )}
-    <Fontes fontes={res.fontes} />
-    {res.ressalva && <p style={{ marginTop:24, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>{res.ressalva}</p>}
-  </div>);
+function renderResult(res) {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#fff",
+      border: "1px solid #e4ded2",
+      borderRadius: 13,
+      padding: "18px 20px",
+      fontSize: 15.5,
+      lineHeight: 1.62,
+      whiteSpace: "pre-wrap"
+    }
+  }, res.resposta), res.como_verificar && res.como_verificar.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10.5,
+      color: C.navy,
+      opacity: .65,
+      marginBottom: 10
+    }
+  }, "Como verificar nos seus dados"), /*#__PURE__*/React.createElement("ul", {
+    style: {
+      margin: 0,
+      paddingLeft: 20,
+      fontSize: 14.5,
+      lineHeight: 1.6
+    }
+  }, res.como_verificar.map((t, i) => /*#__PURE__*/React.createElement("li", {
+    key: i,
+    style: {
+      marginBottom: 6
+    }
+  }, t)))), /*#__PURE__*/React.createElement(Fontes, {
+    fontes: res.fontes
+  }), res.ressalva && /*#__PURE__*/React.createElement("p", {
+    style: {
+      marginTop: 24,
+      fontSize: 12,
+      color: "#8a8576",
+      lineHeight: 1.55
+    }
+  }, res.ressalva));
 }
-
-
-function App(){
+function App() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState(null);
   const [err, setErr] = useState(null);
-  async function run(p){
+  async function run(p) {
     const texto = (p ?? q).trim();
-    if(!texto || loading) return;
-    setQ(texto); setLoading(true); setErr(null); setRes(null);
-    try{ setRes(await ask(texto)); }
-    catch(e){ setErr("Não consegui processar. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
-    finally{ setLoading(false); }
+    if (!texto || loading) return;
+    setQ(texto);
+    setLoading(true);
+    setErr(null);
+    setRes(null);
+    try {
+      setRes(await ask(texto));
+    } catch (e) {
+      setErr("Não consegui processar. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message || "") + ")");
+    } finally {
+      setLoading(false);
+    }
   }
-  return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", color:C.ink, background:C.paper, minHeight:"100vh" }}>
-      <header style={{ background:C.navy, color:"#fff", padding:"30px 28px 34px", position:"relative", overflow:"hidden" }}>
-        <div className="no-print" style={{ position:"absolute", top:-120, right:-80, width:320, height:320, borderRadius:"50%", background:C.blue, opacity:.08 }} />
-        <div className="no-print" style={{ position:"absolute", bottom:-140, left:-60, width:260, height:260, borderRadius:"50%", background:C.green, opacity:.07 }} />
-        <div style={{ maxWidth:920, margin:"0 auto", position:"relative" }}>
-          <a href="../" className="no-print ebr-mono" style={{ fontSize:10, color:C.blue, textDecoration:"none", display:"inline-block", marginBottom:12 }}>← Portal dos protótipos</a>
-          <div className="ebr-mono" style={{ fontSize:11, color:C.blue, marginBottom:14 }}>CLEAR Lab · Protótipo C · Camada 01 — Ler · PILOTO</div>
-          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>Copiloto do <span style={{ fontStyle:"italic", color:C.blue }}>gestor</span></h1>
-          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>Faça uma pergunta analítica sobre a gestão do município. Um assistente que ajuda a pensar os dados — e te diz como verificar a resposta na sua base.</p>
-        </div>
-      </header>
-      <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
-        <div style={{ background:"#7a5b12", color:"#fff", borderRadius:12, padding:"12px 16px", marginBottom:16, fontSize:13.5, lineHeight:1.5 }}><strong>Protótipo:</strong> este copiloto <strong>não está conectado aos dados do seu município</strong>. As respostas são analíticas e gerais — ele indica como você verificaria cada coisa na sua própria base.</div>
-        <div className="no-print" style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
-          <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Sua pergunta</label>
-          <textarea value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
-            placeholder="Ex.: o que pode explicar a queda na cobertura vacinal infantil?" rows={3}
-            style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
-            <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
-            <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
-              style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
-              {loading ? "Processando…" : "Perguntar"}
-            </button>
-          </div>
-        </div>
-        {!res && !loading && (
-          <div className="no-print" style={{ marginTop:16 }}>
-            <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {EXEMPLOS.map(ex=>(<button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>{ex}</button>))}
-            </div>
-          </div>
-        )}
-        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Analisando…</span></div>)}
-        {err && (<div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>{err}</div>)}
-        {res && (<div className="ebr-rise" style={{ marginTop:26 }}>
-          <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
-            <button className="ebr-btn" onClick={()=>window.print()} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 14px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>Imprimir / PDF</button>
-          </div>
-          {renderResult(res)}
-        </div>)}
-      </main>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "'DM Sans',sans-serif",
+      color: C.ink,
+      background: C.paper,
+      minHeight: "100vh"
+    }
+  }, /*#__PURE__*/React.createElement("header", {
+    style: {
+      background: C.navy,
+      color: "#fff",
+      padding: "30px 28px 34px",
+      position: "relative",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      position: "absolute",
+      top: -120,
+      right: -80,
+      width: 320,
+      height: 320,
+      borderRadius: "50%",
+      background: C.blue,
+      opacity: .08
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      position: "absolute",
+      bottom: -140,
+      left: -60,
+      width: 260,
+      height: 260,
+      borderRadius: "50%",
+      background: C.green,
+      opacity: .07
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 920,
+      margin: "0 auto",
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "../",
+    className: "no-print ebr-mono",
+    style: {
+      fontSize: 10,
+      color: C.blue,
+      textDecoration: "none",
+      display: "inline-block",
+      marginBottom: 12
+    }
+  }, "← Portal dos protótipos"), /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 11,
+      color: C.blue,
+      marginBottom: 14
+    }
+  }, "CLEAR Lab · Protótipo C · Camada 01 — Ler · PILOTO"), /*#__PURE__*/React.createElement("h1", {
+    className: "ebr-serif",
+    style: {
+      fontSize: 44,
+      lineHeight: 1.05,
+      margin: 0,
+      fontWeight: 600
+    }
+  }, "Copiloto do ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontStyle: "italic",
+      color: C.blue
+    }
+  }, "gestor")), /*#__PURE__*/React.createElement("p", {
+    style: {
+      maxWidth: 580,
+      marginTop: 14,
+      color: "rgba(255,255,255,.78)",
+      fontSize: 15.5,
+      lineHeight: 1.55
+    }
+  }, "Faça uma pergunta analítica sobre a gestão do município. Um assistente que ajuda a pensar os dados — e te diz como verificar a resposta na sua base."))), /*#__PURE__*/React.createElement("main", {
+    style: {
+      maxWidth: 920,
+      margin: "0 auto",
+      padding: "28px 28px 64px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#7a5b12",
+      color: "#fff",
+      borderRadius: 12,
+      padding: "12px 16px",
+      marginBottom: 16,
+      fontSize: 13.5,
+      lineHeight: 1.5
+    }
+  }, /*#__PURE__*/React.createElement("strong", null, "Protótipo:"), " este copiloto ", /*#__PURE__*/React.createElement("strong", null, "não está conectado aos dados do seu município"), ". As respostas são analíticas e gerais — ele indica como você verificaria cada coisa na sua própria base."), /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      background: "#fff",
+      border: "1px solid #e4ded2",
+      borderRadius: 14,
+      padding: 18
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10.5,
+      color: C.navy,
+      opacity: .7
+    }
+  }, "Sua pergunta"), /*#__PURE__*/React.createElement("textarea", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run();
+    },
+    placeholder: "Ex.: o que pode explicar a queda na cobertura vacinal infantil?",
+    rows: 3,
+    style: {
+      width: "100%",
+      border: "none",
+      outline: "none",
+      resize: "vertical",
+      marginTop: 8,
+      fontSize: 16,
+      lineHeight: 1.5,
+      color: C.ink,
+      background: "transparent"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 10,
+      flexWrap: "wrap",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: "#8a8576"
+    }
+  }, "⌘/Ctrl + Enter para enviar"), /*#__PURE__*/React.createElement("button", {
+    className: "ebr-btn",
+    onClick: () => run(),
+    disabled: loading || !q.trim(),
+    style: {
+      background: loading || !q.trim() ? "#9bb0bb" : C.navy,
+      color: "#fff",
+      border: "none",
+      borderRadius: 9,
+      padding: "11px 22px",
+      fontSize: 14.5,
+      fontWeight: 700
+    }
+  }, loading ? "Processando…" : "Perguntar"))), !res && !loading && /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10,
+      color: "#8a8576",
+      marginBottom: 9
+    }
+  }, "Experimente"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 8
+    }
+  }, EXEMPLOS.map(ex => /*#__PURE__*/React.createElement("button", {
+    key: ex,
+    className: "ebr-chip ebr-btn",
+    onClick: () => run(ex),
+    style: {
+      background: "#fff",
+      border: "1px solid #e4ded2",
+      borderRadius: 999,
+      padding: "7px 14px",
+      fontSize: 13,
+      color: "#5a5648"
+    }
+  }, ex)))), loading && /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      marginTop: 22,
+      color: C.navy,
+      display: "flex",
+      alignItems: "center",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "ebr-dot",
+    style: {
+      width: 8,
+      height: 8,
+      borderRadius: "50%",
+      background: C.blue
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14.5
+    }
+  }, "Analisando…")), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 22,
+      padding: 14,
+      background: "#fbeae4",
+      border: `1px solid ${C.rust}`,
+      borderRadius: 10,
+      color: C.rust,
+      fontSize: 13.5
+    }
+  }, err), res && /*#__PURE__*/React.createElement("div", {
+    className: "ebr-rise",
+    style: {
+      marginTop: 26
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      display: "flex",
+      justifyContent: "flex-end",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "ebr-btn",
+    onClick: () => window.print(),
+    style: {
+      background: "transparent",
+      border: `1px solid ${C.navy}`,
+      color: C.navy,
+      borderRadius: 8,
+      padding: "7px 14px",
+      fontSize: 13,
+      fontWeight: 600,
+      fontFamily: "'DM Sans',sans-serif",
+      cursor: "pointer"
+    }
+  }, "Imprimir / PDF")), renderResult(res))));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
 </script>
 </body>
 </html>
