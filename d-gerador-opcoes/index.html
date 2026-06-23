@@ -9,7 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
   :root{ color-scheme: light; }
   html,body{ margin:0; padding:0; background:#F7F5EF; }
@@ -37,159 +36,552 @@
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
-const { useState } = React;
+<script>
+const {
+  useState
+} = React;
 const WORKER_URL = "https://evidencia-br.caiodesouzacastro28.workers.dev";
 const PRODUTO = "opcoes";
-
-function parseJSON(text){
-  let t = (text||"").replace(/```json|```/g, "").trim();
-  const s = t.indexOf("{"), e = t.lastIndexOf("}");
-  if (s !== -1 && e !== -1) t = t.slice(s, e+1);
+function parseJSON(text) {
+  let t = (text || "").replace(/```json|```/g, "").trim();
+  const s = t.indexOf("{"),
+    e = t.lastIndexOf("}");
+  if (s !== -1 && e !== -1) t = t.slice(s, e + 1);
   return JSON.parse(t);
 }
-async function ask(question){
-  const r = await fetch(WORKER_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ produto: PRODUTO, question }) });
+async function ask(question) {
+  const r = await fetch(WORKER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      produto: PRODUTO,
+      question
+    })
+  });
   const json = await r.json();
   if (json.error) throw new Error(json.error.message || "Erro na API");
   const cand = json.candidates && json.candidates[0];
-  const txt = (cand?.content?.parts || []).map(p=>p.text).filter(Boolean).join("");
+  const txt = (cand?.content?.parts || []).map(p => p.text).filter(Boolean).join("");
   const parsed = parseJSON(txt);
   const chunks = cand?.groundingMetadata?.groundingChunks || [];
-  const grounded = chunks.map(c=>({ titulo:c.web?.title||c.web?.uri, url:c.web?.uri })).filter(x=>x.url);
+  const grounded = chunks.map(c => ({
+    titulo: c.web?.title || c.web?.uri,
+    url: c.web?.uri
+  })).filter(x => x.url);
   if (grounded.length && (!parsed.fontes || !parsed.fontes.length)) parsed.fontes = grounded;
   return parsed;
 }
-
-const C = { navy:"#01354A", navy2:"#012030", blue:"#08B0EE", green:"#98C43B", paper:"#F7F5EF", ink:"#1A1A1C", amber:"#E0992E", rust:"#C2572E" };
-const NIVEL = {
-  A:{cor:C.green,rotulo:"Forte",desc:"Revisões sistemáticas / múltiplos ECRs"},
-  B:{cor:C.blue,rotulo:"Moderada",desc:"Estudo controlado ou quase-experimental"},
-  C:{cor:C.amber,rotulo:"Limitada",desc:"Estudos observacionais / séries de casos"},
-  D:{cor:C.rust,rotulo:"Incipiente",desc:"Opinião de especialista / sem evidência robusta"},
+const C = {
+  navy: "#01354A",
+  navy2: "#012030",
+  blue: "#08B0EE",
+  green: "#98C43B",
+  paper: "#F7F5EF",
+  ink: "#1A1A1C",
+  amber: "#E0992E",
+  rust: "#C2572E"
 };
-const INTENS = { "Baixo":C.green, "Médio":C.amber, "Medio":C.amber, "Alto":C.rust };
+const NIVEL = {
+  A: {
+    cor: C.green,
+    rotulo: "Forte",
+    desc: "Revisões sistemáticas / múltiplos ECRs"
+  },
+  B: {
+    cor: C.blue,
+    rotulo: "Moderada",
+    desc: "Estudo controlado ou quase-experimental"
+  },
+  C: {
+    cor: C.amber,
+    rotulo: "Limitada",
+    desc: "Estudos observacionais / séries de casos"
+  },
+  D: {
+    cor: C.rust,
+    rotulo: "Incipiente",
+    desc: "Opinião de especialista / sem evidência robusta"
+  }
+};
+const INTENS = {
+  "Baixo": C.green,
+  "Médio": C.amber,
+  "Medio": C.amber,
+  "Alto": C.rust
+};
 const EXEMPLOS = ["Reduzir a evasão escolar no ensino médio", "Diminuir as filas na atenção primária", "Reduzir a reincidência criminal juvenil", "Aumentar a adesão à creche em territórios vulneráveis"];
-
-function Selo({texto, cor, escuro}){
-  return <span style={{ background:cor, color:escuro?C.navy2:"#fff", borderRadius:999, padding:"3px 12px", fontSize:11.5, fontWeight:700, whiteSpace:"nowrap" }}>{texto}</span>;
+function Selo({
+  texto,
+  cor,
+  escuro
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: cor,
+      color: escuro ? C.navy2 : "#fff",
+      borderRadius: 999,
+      padding: "3px 12px",
+      fontSize: 11.5,
+      fontWeight: 700,
+      whiteSpace: "nowrap"
+    }
+  }, texto);
 }
-function NivelSelo({nivel}){
+function NivelSelo({
+  nivel
+}) {
   const n = NIVEL[nivel] || NIVEL.D;
-  return <span title={n.desc}><Selo texto={"Nível "+nivel+" · "+n.rotulo} cor={n.cor} escuro={nivel==="A"||nivel==="C"} /></span>;
+  return /*#__PURE__*/React.createElement("span", {
+    title: n.desc
+  }, /*#__PURE__*/React.createElement(Selo, {
+    texto: "Nível " + nivel + " · " + n.rotulo,
+    cor: n.cor,
+    escuro: nivel === "A" || nivel === "C"
+  }));
 }
-function Fontes({fontes}){
-  if(!fontes || !fontes.length) return null;
-  return (
-    <div className="ebr-fontes" style={{ marginTop:24 }}>
-      <div className="ebr-mono" style={{ fontSize:9.5, color:"#a8a292", marginBottom:7 }}>Fontes consultadas</div>
-      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-        {fontes.map((f,i)=>(<a key={i} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize:11.5, color:"#8a8576", textDecoration:"none", lineHeight:1.45 }}>· {f.titulo} ↗</a>))}
-      </div>
-    </div>
-  );
+function Fontes({
+  fontes
+}) {
+  if (!fontes || !fontes.length) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "ebr-fontes",
+    style: {
+      marginTop: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 9.5,
+      color: "#a8a292",
+      marginBottom: 7
+    }
+  }, "Fontes consultadas"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 3
+    }
+  }, fontes.map((f, i) => /*#__PURE__*/React.createElement("a", {
+    key: i,
+    href: f.url,
+    target: "_blank",
+    rel: "noreferrer",
+    style: {
+      fontSize: 11.5,
+      color: "#8a8576",
+      textDecoration: "none",
+      lineHeight: 1.45
+    }
+  }, "· ", f.titulo, " ↗"))));
 }
-function NavyBox({rotulo, children}){
-  return (
-    <div style={{ marginTop:24, background:C.navy, color:"#fff", borderRadius:13, padding:"18px 20px" }}>
-      <div className="ebr-mono" style={{ fontSize:10.5, color:C.green, marginBottom:8 }}>{rotulo}</div>
-      <div style={{ fontSize:14.5, lineHeight:1.6, color:"rgba(255,255,255,.88)" }}>{children}</div>
-    </div>
-  );
+function NavyBox({
+  rotulo,
+  children
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 24,
+      background: C.navy,
+      color: "#fff",
+      borderRadius: 13,
+      padding: "18px 20px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10.5,
+      color: C.green,
+      marginBottom: 8
+    }
+  }, rotulo), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14.5,
+      lineHeight: 1.6,
+      color: "rgba(255,255,255,.88)"
+    }
+  }, children));
 }
-
-
-function renderResult(res){
-  return (<div>
-    <div className="ebr-mono" style={{ fontSize:10.5, color:C.blue, marginBottom:8 }}>O problema</div>
-    <p className="ebr-serif" style={{ fontSize:22, lineHeight:1.35, margin:"0 0 28px", fontWeight:500 }}>{res.problema}</p>
-    <div className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.65, marginBottom:12 }}>Opções de desenho · menu de deliberação</div>
-    <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-      {(res.opcoes||[]).map((o,i)=>(
-        <div key={i} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:13, padding:"18px 20px", borderLeft:`5px solid ${(NIVEL[o.nivel]||NIVEL.D).cor}` }}>
-          <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
-            <h3 className="ebr-serif" style={{ fontSize:19, margin:0, fontWeight:600, color:C.navy }}>{o.titulo}</h3>
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-              {o.custo && <Selo texto={"Custo "+o.custo} cor={INTENS[o.custo]||C.amber} escuro={true} />}
-              <NivelSelo nivel={o.nivel} />
-            </div>
-          </div>
-          {o.instrumento && <div className="ebr-mono" style={{ fontSize:10, color:C.blue, marginTop:8 }}>{o.instrumento}</div>}
-          {o.mecanismo && <p style={{ margin:"9px 0 0", fontSize:14, color:"#6b6757", fontStyle:"italic" }}>{o.mecanismo}</p>}
-          <p style={{ margin:"11px 0 0", fontSize:15, lineHeight:1.58 }}>{o.evidencia}</p>
-          {o.custo_nota && <p style={{ margin:"8px 0 0", fontSize:12.5, color:"#8a8576" }}>Custo: {o.custo_nota}</p>}
-          {o.requisitos && <div style={{ marginTop:12, padding:"9px 12px", background:C.paper, borderRadius:8, fontSize:13, color:"#5a5648" }}><strong style={{ color:C.navy }}>Requer · </strong>{o.requisitos}</div>}
-        </div>
-      ))}
-    </div>
-    {res.consideracoes && <NavyBox rotulo="Como deliberar">{res.consideracoes}</NavyBox>}
-    <Fontes fontes={res.fontes} />
-    <p style={{ marginTop:24, fontSize:12, color:"#8a8576", lineHeight:1.55 }}>Menu de opções gerado por IA — <strong>não é recomendação</strong>. A escolha e a adequação ao seu município seguem do gestor.</p>
-  </div>);
+function renderResult(res) {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10.5,
+      color: C.blue,
+      marginBottom: 8
+    }
+  }, "O problema"), /*#__PURE__*/React.createElement("p", {
+    className: "ebr-serif",
+    style: {
+      fontSize: 22,
+      lineHeight: 1.35,
+      margin: "0 0 28px",
+      fontWeight: 500
+    }
+  }, res.problema), /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10.5,
+      color: C.navy,
+      opacity: .65,
+      marginBottom: 12
+    }
+  }, "Opções de desenho · menu de deliberação"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 14
+    }
+  }, (res.opcoes || []).map((o, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      background: "#fff",
+      border: "1px solid #e4ded2",
+      borderRadius: 13,
+      padding: "18px 20px",
+      borderLeft: `5px solid ${(NIVEL[o.nivel] || NIVEL.D).cor}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "baseline",
+      justifyContent: "space-between",
+      gap: 12,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "ebr-serif",
+    style: {
+      fontSize: 19,
+      margin: 0,
+      fontWeight: 600,
+      color: C.navy
+    }
+  }, o.titulo), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap"
+    }
+  }, o.custo && /*#__PURE__*/React.createElement(Selo, {
+    texto: "Custo " + o.custo,
+    cor: INTENS[o.custo] || C.amber,
+    escuro: true
+  }), /*#__PURE__*/React.createElement(NivelSelo, {
+    nivel: o.nivel
+  }))), o.instrumento && /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10,
+      color: C.blue,
+      marginTop: 8
+    }
+  }, o.instrumento), o.mecanismo && /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: "9px 0 0",
+      fontSize: 14,
+      color: "#6b6757",
+      fontStyle: "italic"
+    }
+  }, o.mecanismo), /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: "11px 0 0",
+      fontSize: 15,
+      lineHeight: 1.58
+    }
+  }, o.evidencia), o.custo_nota && /*#__PURE__*/React.createElement("p", {
+    style: {
+      margin: "8px 0 0",
+      fontSize: 12.5,
+      color: "#8a8576"
+    }
+  }, "Custo: ", o.custo_nota), o.requisitos && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      padding: "9px 12px",
+      background: C.paper,
+      borderRadius: 8,
+      fontSize: 13,
+      color: "#5a5648"
+    }
+  }, /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: C.navy
+    }
+  }, "Requer · "), o.requisitos)))), res.consideracoes && /*#__PURE__*/React.createElement(NavyBox, {
+    rotulo: "Como deliberar"
+  }, res.consideracoes), /*#__PURE__*/React.createElement(Fontes, {
+    fontes: res.fontes
+  }), /*#__PURE__*/React.createElement("p", {
+    style: {
+      marginTop: 24,
+      fontSize: 12,
+      color: "#8a8576",
+      lineHeight: 1.55
+    }
+  }, "Menu de opções gerado por IA — ", /*#__PURE__*/React.createElement("strong", null, "não é recomendação"), ". A escolha e a adequação ao seu município seguem do gestor."));
 }
-
-
-function App(){
+function App() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState(null);
   const [err, setErr] = useState(null);
-  async function run(p){
+  async function run(p) {
     const texto = (p ?? q).trim();
-    if(!texto || loading) return;
-    setQ(texto); setLoading(true); setErr(null); setRes(null);
-    try{ setRes(await ask(texto)); }
-    catch(e){ setErr("Não consegui processar. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message||"") + ")"); }
-    finally{ setLoading(false); }
+    if (!texto || loading) return;
+    setQ(texto);
+    setLoading(true);
+    setErr(null);
+    setRes(null);
+    try {
+      setRes(await ask(texto));
+    } catch (e) {
+      setErr("Não consegui processar. Verifique o Worker/limite do Gemini ou reformule. (" + (e.message || "") + ")");
+    } finally {
+      setLoading(false);
+    }
   }
-  return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", color:C.ink, background:C.paper, minHeight:"100vh" }}>
-      <header style={{ background:C.navy, color:"#fff", padding:"30px 28px 34px", position:"relative", overflow:"hidden" }}>
-        <div className="no-print" style={{ position:"absolute", top:-120, right:-80, width:320, height:320, borderRadius:"50%", background:C.blue, opacity:.08 }} />
-        <div className="no-print" style={{ position:"absolute", bottom:-140, left:-60, width:260, height:260, borderRadius:"50%", background:C.green, opacity:.07 }} />
-        <div style={{ maxWidth:920, margin:"0 auto", position:"relative" }}>
-          <a href="../" className="no-print ebr-mono" style={{ fontSize:10, color:C.blue, textDecoration:"none", display:"inline-block", marginBottom:12 }}>← Portal dos protótipos</a>
-          <div className="ebr-mono" style={{ fontSize:11, color:C.blue, marginBottom:14 }}>CLEAR Lab · Protótipo D · Camada 03 — Propor · PILOTO</div>
-          <h1 className="ebr-serif" style={{ fontSize:44, lineHeight:1.05, margin:0, fontWeight:600 }}>Gerador de <span style={{ fontStyle:"italic", color:C.blue }}>Opções</span></h1>
-          <p style={{ maxWidth:580, marginTop:14, color:"rgba(255,255,255,.78)", fontSize:15.5, lineHeight:1.55 }}>Descreva um problema de política. O sistema gera um menu de opções de desenho — instrumento, mecanismo, evidência e custo. É menu de deliberação, não recomendação.</p>
-        </div>
-      </header>
-      <main style={{ maxWidth:920, margin:"0 auto", padding:"28px 28px 64px" }}>
-        
-        <div className="no-print" style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:14, padding:18 }}>
-          <label className="ebr-mono" style={{ fontSize:10.5, color:C.navy, opacity:.7 }}>Problema de política</label>
-          <textarea value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) run(); }}
-            placeholder="Ex.: queremos reduzir a evasão escolar no ensino médio do município" rows={3}
-            style={{ width:"100%", border:"none", outline:"none", resize:"vertical", marginTop:8, fontSize:16, lineHeight:1.5, color:C.ink, background:"transparent" }} />
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, flexWrap:"wrap", gap:10 }}>
-            <span style={{ fontSize:12, color:"#8a8576" }}>⌘/Ctrl + Enter para enviar</span>
-            <button className="ebr-btn" onClick={()=>run()} disabled={loading || !q.trim()}
-              style={{ background:(loading||!q.trim())?"#9bb0bb":C.navy, color:"#fff", border:"none", borderRadius:9, padding:"11px 22px", fontSize:14.5, fontWeight:700 }}>
-              {loading ? "Processando…" : "Gerar opções"}
-            </button>
-          </div>
-        </div>
-        {!res && !loading && (
-          <div className="no-print" style={{ marginTop:16 }}>
-            <div className="ebr-mono" style={{ fontSize:10, color:"#8a8576", marginBottom:9 }}>Experimente</div>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {EXEMPLOS.map(ex=>(<button key={ex} className="ebr-chip ebr-btn" onClick={()=>run(ex)} style={{ background:"#fff", border:"1px solid #e4ded2", borderRadius:999, padding:"7px 14px", fontSize:13, color:"#5a5648" }}>{ex}</button>))}
-            </div>
-          </div>
-        )}
-        {loading && (<div className="no-print" style={{ marginTop:22, color:C.navy, display:"flex", alignItems:"center", gap:10 }}><span className="ebr-dot" style={{ width:8, height:8, borderRadius:"50%", background:C.blue }} /><span style={{ fontSize:14.5 }}>Gerando opções e ancorando em evidência…</span></div>)}
-        {err && (<div style={{ marginTop:22, padding:14, background:"#fbeae4", border:`1px solid ${C.rust}`, borderRadius:10, color:C.rust, fontSize:13.5 }}>{err}</div>)}
-        {res && (<div className="ebr-rise" style={{ marginTop:26 }}>
-          <div className="no-print" style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
-            <button className="ebr-btn" onClick={()=>window.print()} style={{ background:"transparent", border:`1px solid ${C.navy}`, color:C.navy, borderRadius:8, padding:"7px 14px", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>Imprimir / PDF</button>
-          </div>
-          {renderResult(res)}
-        </div>)}
-      </main>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "'DM Sans',sans-serif",
+      color: C.ink,
+      background: C.paper,
+      minHeight: "100vh"
+    }
+  }, /*#__PURE__*/React.createElement("header", {
+    style: {
+      background: C.navy,
+      color: "#fff",
+      padding: "30px 28px 34px",
+      position: "relative",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      position: "absolute",
+      top: -120,
+      right: -80,
+      width: 320,
+      height: 320,
+      borderRadius: "50%",
+      background: C.blue,
+      opacity: .08
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      position: "absolute",
+      bottom: -140,
+      left: -60,
+      width: 260,
+      height: 260,
+      borderRadius: "50%",
+      background: C.green,
+      opacity: .07
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 920,
+      margin: "0 auto",
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "../",
+    className: "no-print ebr-mono",
+    style: {
+      fontSize: 10,
+      color: C.blue,
+      textDecoration: "none",
+      display: "inline-block",
+      marginBottom: 12
+    }
+  }, "← Portal dos protótipos"), /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 11,
+      color: C.blue,
+      marginBottom: 14
+    }
+  }, "CLEAR Lab · Protótipo D · Camada 03 — Propor · PILOTO"), /*#__PURE__*/React.createElement("h1", {
+    className: "ebr-serif",
+    style: {
+      fontSize: 44,
+      lineHeight: 1.05,
+      margin: 0,
+      fontWeight: 600
+    }
+  }, "Gerador de ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontStyle: "italic",
+      color: C.blue
+    }
+  }, "Opções")), /*#__PURE__*/React.createElement("p", {
+    style: {
+      maxWidth: 580,
+      marginTop: 14,
+      color: "rgba(255,255,255,.78)",
+      fontSize: 15.5,
+      lineHeight: 1.55
+    }
+  }, "Descreva um problema de política. O sistema gera um menu de opções de desenho — instrumento, mecanismo, evidência e custo. É menu de deliberação, não recomendação."))), /*#__PURE__*/React.createElement("main", {
+    style: {
+      maxWidth: 920,
+      margin: "0 auto",
+      padding: "28px 28px 64px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      background: "#fff",
+      border: "1px solid #e4ded2",
+      borderRadius: 14,
+      padding: 18
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10.5,
+      color: C.navy,
+      opacity: .7
+    }
+  }, "Problema de política"), /*#__PURE__*/React.createElement("textarea", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run();
+    },
+    placeholder: "Ex.: queremos reduzir a evasão escolar no ensino médio do município",
+    rows: 3,
+    style: {
+      width: "100%",
+      border: "none",
+      outline: "none",
+      resize: "vertical",
+      marginTop: 8,
+      fontSize: 16,
+      lineHeight: 1.5,
+      color: C.ink,
+      background: "transparent"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 10,
+      flexWrap: "wrap",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: "#8a8576"
+    }
+  }, "⌘/Ctrl + Enter para enviar"), /*#__PURE__*/React.createElement("button", {
+    className: "ebr-btn",
+    onClick: () => run(),
+    disabled: loading || !q.trim(),
+    style: {
+      background: loading || !q.trim() ? "#9bb0bb" : C.navy,
+      color: "#fff",
+      border: "none",
+      borderRadius: 9,
+      padding: "11px 22px",
+      fontSize: 14.5,
+      fontWeight: 700
+    }
+  }, loading ? "Processando…" : "Gerar opções"))), !res && !loading && /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ebr-mono",
+    style: {
+      fontSize: 10,
+      color: "#8a8576",
+      marginBottom: 9
+    }
+  }, "Experimente"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 8
+    }
+  }, EXEMPLOS.map(ex => /*#__PURE__*/React.createElement("button", {
+    key: ex,
+    className: "ebr-chip ebr-btn",
+    onClick: () => run(ex),
+    style: {
+      background: "#fff",
+      border: "1px solid #e4ded2",
+      borderRadius: 999,
+      padding: "7px 14px",
+      fontSize: 13,
+      color: "#5a5648"
+    }
+  }, ex)))), loading && /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      marginTop: 22,
+      color: C.navy,
+      display: "flex",
+      alignItems: "center",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "ebr-dot",
+    style: {
+      width: 8,
+      height: 8,
+      borderRadius: "50%",
+      background: C.blue
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14.5
+    }
+  }, "Gerando opções e ancorando em evidência…")), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 22,
+      padding: 14,
+      background: "#fbeae4",
+      border: `1px solid ${C.rust}`,
+      borderRadius: 10,
+      color: C.rust,
+      fontSize: 13.5
+    }
+  }, err), res && /*#__PURE__*/React.createElement("div", {
+    className: "ebr-rise",
+    style: {
+      marginTop: 26
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      display: "flex",
+      justifyContent: "flex-end",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "ebr-btn",
+    onClick: () => window.print(),
+    style: {
+      background: "transparent",
+      border: `1px solid ${C.navy}`,
+      color: C.navy,
+      borderRadius: 8,
+      padding: "7px 14px",
+      fontSize: 13,
+      fontWeight: 600,
+      fontFamily: "'DM Sans',sans-serif",
+      cursor: "pointer"
+    }
+  }, "Imprimir / PDF")), renderResult(res))));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
 </script>
 </body>
 </html>
